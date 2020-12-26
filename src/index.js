@@ -1,4 +1,3 @@
-console.log('will i import?');
 const util = require("util");
 const neodoc = require("neodoc");
 const { Environment } = require("@truffle/environment")
@@ -9,11 +8,15 @@ const { selectors: $ } = require("@truffle/debugger");
 
 const commandName = "tx2seq";
 const usage = `
-usage: ${commandName} [--fetch-external|-x] <tx-hash>
+Transaction to Sequence diagram tool
+
+usage: ${commandName}  [--fetch-external] [--short-participant-names] [--help] (<tx-hash>)
 
 options:
-  --fetch-external, -x
-    Fetch external sources from EtherScan and Sourcify
+  -h --help                         Show help
+  -x --fetch-external               Fetch external sources from EtherScan and Sourcify
+  -s --short-participant-names      Generate short names for participants. This means
+                                    <contract-name> instead of <address>:<contract-name>
 `;
 
 const codecInspect = (typedValue, options) => {
@@ -27,14 +30,99 @@ const codecInspectWithType = (typedValue, options) => {
   return `${metaValue.type.typeHint} ${value}`;
 }
 
-const arguments = args =>
-  args.map(({name, value}) => `${value.type.typeHint} ${name} = ${codecInspect(value, { depth: null })}`)
-      .join(", ");
+const arguments = args => {
+  return args
+    ?  args.map(({name, value}) => `${value.type.typeHint} ${name} = ${codecInspect(value, { depth: null })}`) .join(", ")
+    : '-';
+}
+
+const generateUml = (actions, txHash, {shortParticipantNames}) => {
+  let participantCounter = 0;
+  const participants = {};
+  const pumlRelations = [];
+
+  const constructName = n => shortParticipantNames
+    ?  `${n.contractName}`
+    :  `${n.address}:${n.contractName}`
+
+  const getNameAndAlias = n => {
+    let name, alias;
+    if (n.type === 'transaction') {
+      name = `${n.origin.slice(2,5)}..${n.origin.slice(-4)}`;
+      alias = 'eow'
+      participants[name] = alias;
+    } else {
+      name = constructName(n);
+      if (!(name in participants)){
+        alias = `p${++participantCounter}`
+        participants[name] = alias;
+      }
+      alias = participants[name];
+    }
+    return {name, alias};
+  }
+
+  for (const {src, dst, isCall} of actions) {
+    if (!src || !dst ) continue;
+
+    const sourceArgs = src.arguments ? arguments(src.arguments) : '';
+    const destinationArgs = dst.arguments ? arguments(dst.arguments) : '';
+
+    const source = {
+      alias: getNameAndAlias(src).alias,
+      error: src.error,
+      input: `${src.functionName}(${sourceArgs})`,
+      output: src.returnValues  && src.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
+      returnKind: src.returnKind
+    };
+
+    const destination = {
+      alias: getNameAndAlias(dst).alias,
+      error: dst.error,
+      input: `${dst.functionName}(${destinationArgs})`,
+      output: dst.returnValues && dst.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
+      returnKind: dst.returnKind,
+    };
+
+    console.log('\n\n\nsrc:returnKind', source.returnKind);
+    console.log('dst:returnKind', destination.returnKind);
+    console.log('src.error: ', util.inspect(src.error, {depth:null}));
+    console.log('dst.error: ', util.inspect(dst.error, {depth:null}));
+    const relation = isCall
+      ?  `${source.alias} -> ${destination.alias} ++ : ${destination.input}`
+      :  `${source.alias} -> ${destination.alias} -- : ${source.output}`;
+
+    pumlRelations.push(relation);
+
+  }
+
+  const pumlParticipants = Object.entries(participants)
+    .map(([k,v]) => {
+      const participantType = v === 'eow' ? 'actor' : 'participant';
+      return `${participantType} ${v} as "${k}"`
+    })
+
+  const prologue = `@startuml\n\n`;
+  const epilogue = `\n\n@enduml\n`;
+  const title = `title Txn Hash: ${txHash}\n\n`;
+  const actors = pumlParticipants.join(`\n`) + '\n\n';
+  const puml = prologue + title + actors + pumlRelations.join(`\n`) + epilogue;
+
+  return puml;
+}
+
+const visit = (root, parent, umlActions=[]) => {
+  umlActions.push({src: parent, dst: root, isCall: true });
+  for (const action of root.actions) {
+    visit(action, root, umlActions);
+  }
+  umlActions.push({src: root, dst: parent, isCall: false });
+}
+
 
 const run = async (config) => {
   await Environment.detect(config);
-  console.log('entry the function');
-  const { txHash, fetchExternal } = parseOptions(process.argv);
+  const { txHash, fetchExternal, shortParticipantNames } = parseOptions(process.argv);
 
   const cli = new CLIDebugger(
     config.with({
@@ -54,84 +142,11 @@ const run = async (config) => {
 
   // $ = selectors
   const txLog = bugger.view($.txlog.views.transactionLog);
-  console.log('%O', txLog);
 
-  const calls = [{
-    type: 'actor',
-    name:  txLog.origin,
-    display: `${txLog.origin.slice(2,6)}..${txLog.origin.slice(-4)}`,
-    to: `${txLog.actions[0].contractName}.${txLog.actions[0].functionName}`
-  }];
+  const umlActions = [];
+  visit(txLog, null, umlActions);
 
-  // list actions
-  for (const action of txLog.actions) {
-    const args = arguments(action.arguments);
-
-    calls.push({
-      type: 'participant',
-      name: `${action.contractName}`,
-      input: `${action.functionName}(${args})`,
-      output: action.returnValues.map(rv => codecInspectWithType(rv)).join(', ')
-    });
-
-    for (const step of action.actions) {
-      const args = arguments(step.arguments);
-      calls.push({
-        type: 'participant',
-        name: `${step.contractName}`,
-        input: `${step.functionName}(${args})`,
-        output: step.returnValues.map(rv => codecInspectWithType(rv)).join(', ')
-      });
-    }
-  }
-  console.log('calls: %O', calls);
-
-  const stackFrame = [];
-  const pumlParticipants = [];
-  const pumlCommands = [];
-  let alias, top;
-  let currentCall = 0;
-
-  // give eow an input
-  if (calls.length) calls[0].input = calls[1].input;
-
-  for (const call of calls) {
-    alias = (!pumlParticipants.length)
-      ? 'eow'
-      : `p${++currentCall}`;
-    call.participant = alias;
-
-    if (stackFrame.length) {
-      pumlCommands.push(`${top.participant} -> ${alias} : ${call.input}`);
-      pumlCommands.push(`activate ${alias}\n`);
-    }
-
-    const kind = pumlParticipants.length ? 'participant' : 'actor';
-    pumlParticipants.push(`${kind} ${call.display || call.name} as ${alias}`);
-    stackFrame.push(call);
-    top = call;
-  }
-
-
-  // TODO: handle unwind on errors
-  //       if a revert/error is detected unwind to eow. ???
-  //       maybe?
-
-  let activeFrame = stackFrame.pop();
-  while (stackFrame.length) {
-    top = stackFrame.pop();
-    pumlCommands.push(`${activeFrame.participant} -> ${top.participant} : ${activeFrame.output}`);
-    pumlCommands.push(`deactivate ${activeFrame.participant}\n`);
-    activeFrame = top;
-  }
-
-  const prologue = `@startuml\n\n`;
-  const epilogue = `\n\n@enduml\n`;
-  const title = `title Txn Hash: ${txHash}\n\n`;
-  const actors = pumlParticipants.join(`\n`) + '\n\n';
-  const puml = prologue + title + actors + pumlCommands.join(`\n`) + epilogue;
-
-  console.log('\n-- output --\n');
+  const puml = generateUml(umlActions, txHash, {shortParticipantNames});
   console.log(puml);
 }
 
@@ -146,15 +161,16 @@ const parseOptions = (args) => {
     ...options
   } = neodoc.run(usage, {
     argv,
-    smartOptions: true,
-    allowUnknown: true
+    optionsFirst: true,
   });
 
   const fetchExternal = options["--fetch-external"] || options["-x"];
+  const shortParticipantNames = options["--short-participant-names"] || options["-s"] || false;
 
   return {
     fetchExternal,
-    txHash
+    txHash,
+    shortParticipantNames
   };
 }
 
