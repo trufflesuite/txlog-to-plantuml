@@ -1,7 +1,8 @@
 const fs = require('fs');
 const util = require("util");
 const neodoc = require("neodoc");
-const { Environment } = require("@truffle/environment")
+const { Environment } = require("@truffle/environment");
+const { formatStacktrace } = require("@truffle/debug-utils");
 
 const Codec = require("@truffle/codec");
 const { CLIDebugger } = require("@truffle/core/lib/debug/cli");
@@ -167,7 +168,13 @@ const run = async (config) => {
     bugger.advance();
   }
 
+
   const txLog = bugger.view($.txlog.views.transactionLog);
+  //const stacktrace = bugger.view($.stacktrace.current.finalReport);
+  const errorHappened = bugger.view($.session.status.errored)
+  const stacktrace = bugger.stacktrace();
+  console.log(formatStacktrace(stacktrace));
+  console.log('errorHappened', errorHappened);
   const umlActions = [];
   visit(txLog, null, umlActions);
 
