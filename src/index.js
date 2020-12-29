@@ -62,6 +62,9 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     return {name, alias};
   }
 
+  // store src and dst of revert message
+  const revertRelation = { src: null, dst: null, deactivations: [] }
+
   for (const {src, dst, isCall} of actions) {
     if (!src || !dst ) continue;
 
@@ -84,16 +87,28 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
       returnKind: dst.returnKind,
     };
 
-    console.log('\n\n\nsrc:returnKind', source.returnKind);
-    console.log('dst:returnKind', destination.returnKind);
-    console.log('src.error: ', util.inspect(src.error, {depth:null}));
-    console.log('dst.error: ', util.inspect(dst.error, {depth:null}));
-    const relation = isCall
-      ?  `${source.alias} -> ${destination.alias} ++ : ${destination.input}`
-      :  `${source.alias} -> ${destination.alias} -- : ${source.output}`;
+    let relation;
+    if (isCall) {
+      relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input}`
+      pumlRelations.push(relation);
+    } else {
+      if (source.returnKind === 'revert') {
+        revertRelation.deactivations.push(`deactivate ${source.alias}`);
+        revertRelation.src = revertRelation.src || source.alias;
+        revertRelation.err = revertRelation.err || source.error.arguments[0].value.value.asString;
+        revertRelation.dst = destination.alias;
 
-    pumlRelations.push(relation);
+      } else if (source.returnKind === 'return') {
+        relation = `${source.alias} -> ${destination.alias} -- : ${source.output}`;
+        pumlRelations.push(relation);
+      }
+    }
+  }
 
+  // add revert if necessary
+  if (revertRelation.src) {
+    pumlRelations.push(`${revertRelation.src} --> ${revertRelation.dst}: ${revertRelation.err}`);
+    pumlRelations.push(...revertRelation.deactivations);
   }
 
   const pumlParticipants = Object.entries(participants)
