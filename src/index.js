@@ -45,18 +45,18 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
   const participants = {};
   const pumlRelations = [];
 
-  const constructName = n => shortParticipantNames
+  const constructName = (n, lastKnownAddress) => shortParticipantNames
     ?  `${n.contractName}`
-    :  `${n.address}:${n.contractName}`
+    :  `${n.address||lastKnownAddress}:${n.contractName}`
 
-  const getNameAndAlias = n => {
+  const getNameAndAlias = (n, lastKnownAddress) => {
     let name, alias;
     if (n.type === 'transaction') {
       name = `${n.origin.slice(2,5)}..${n.origin.slice(-4)}`;
       alias = 'eow'
       participants[name] = alias;
     } else {
-      name = constructName(n);
+      name = constructName(n, lastKnownAddress);
       if (!(name in participants)){
         alias = `p${++participantCounter}`
         participants[name] = alias;
@@ -69,14 +69,20 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
   // store src and dst of revert message
   const revertRelation = { src: null, dst: null, deactivations: [] }
 
+
+  // keep track of current address for internal calls. is this right?
+  let currentAddress;
+
   for (const {src, dst, isCall} of actions) {
     if (!src || !dst ) continue;
 
     const sourceArgs = src.arguments ? arguments(src.arguments) : '';
     const destinationArgs = dst.arguments ? arguments(dst.arguments) : '';
 
+    if (isCall && src.type === 'callexternal') currentAddress = src.address
+
     const source = {
-      alias: getNameAndAlias(src).alias,
+      alias: getNameAndAlias(src, currentAddress).alias,
       error: src.error,
       input: `${src.functionName}(${sourceArgs})`,
       output: src.returnValues  && src.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
@@ -84,7 +90,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     };
 
     const destination = {
-      alias: getNameAndAlias(dst).alias,
+      alias: getNameAndAlias(dst, currentAddress).alias,
       error: dst.error,
       input: `${dst.functionName}(${destinationArgs})`,
       output: dst.returnValues && dst.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
