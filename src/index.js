@@ -1,3 +1,4 @@
+const fs = require('fs');
 const util = require("util");
 const neodoc = require("neodoc");
 const { Environment } = require("@truffle/environment")
@@ -18,6 +19,7 @@ usage:
 options:
   -h --help                         Show help
   -v --version                      Show version
+  -o --outfile=OUTFILE              Specify the output filename
   -s --short-participant-names      Generate short names for participants. This means
                                     <contract-name> instead of <address>:<contract-name>
   -x --fetch-external               Fetch external sources from EtherScan and Sourcify
@@ -147,7 +149,7 @@ const visit = (root, parent, umlActions=[]) => {
 
 const run = async (config) => {
   await Environment.detect(config);
-  const { txHash, fetchExternal, shortParticipantNames } = parseOptions(process.argv);
+  const { txHash, fetchExternal, outFile, shortParticipantNames } = parseOptions(process.argv);
 
   const cli = new CLIDebugger(
     config.with({
@@ -170,7 +172,8 @@ const run = async (config) => {
   visit(txLog, null, umlActions);
 
   const puml = generateUml(umlActions, txHash, {shortParticipantNames});
-  console.log(puml);
+  fs.writeFileSync(outFile, puml);
+  console.log(`Plantuml specs written to: ${outFile}`);
 }
 
 const parseOptions = (args) => {
@@ -193,11 +196,13 @@ const parseOptions = (args) => {
 
   const fetchExternal = options["--fetch-external"] ? true : false;
   const shortParticipantNames = options["--short-participant-names"] ? true : false;
+  const outFile =  options["--outfile"] || `${txHash}.puml`;
 
   return {
     fetchExternal,
-    txHash,
-    shortParticipantNames
+    outFile,
+    shortParticipantNames,
+    txHash
   };
 }
 
