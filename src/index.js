@@ -7,16 +7,20 @@ const { CLIDebugger } = require("@truffle/core/lib/debug/cli");
 const { selectors: $ } = require("@truffle/debugger");
 
 const commandName = "tx2seq";
+const truffleCommand = "truffle run tx2seq";
+const commandVersion = `Truffle transaction visualizer ${commandName}: 0.0.0`;
 const usage = `
-Transaction to Sequence diagram tool
+Truffle transaction visualizer: a study aid for Ethereum transactions.
 
-usage: ${commandName}  [--fetch-external] [--short-participant-names] [--help] (<tx-hash>)
+usage:
+  ${truffleCommand} [options] <tx-hash>
 
 options:
   -h --help                         Show help
-  -x --fetch-external               Fetch external sources from EtherScan and Sourcify
+  -v --version                      Show version
   -s --short-participant-names      Generate short names for participants. This means
                                     <contract-name> instead of <address>:<contract-name>
+  -x --fetch-external               Fetch external sources from EtherScan and Sourcify
 `;
 
 const codecInspect = (typedValue, options) => {
@@ -155,9 +159,7 @@ const run = async (config) => {
     bugger.advance();
   }
 
-  // $ = selectors
   const txLog = bugger.view($.txlog.views.transactionLog);
-
   const umlActions = [];
   visit(txLog, null, umlActions);
 
@@ -169,18 +171,22 @@ const parseOptions = (args) => {
   // convert raw args for neodoc
   // process.argv will roughly be: `node <truffle-path> run tx2seq ...`
   // and we want `truffle run tx2seq`
-  const argv = args.slice(args.indexOf(commandName) + 1)
+  const argv = args.slice(args.indexOf(commandName) - 1);
+
+  const parsedOptions = neodoc.run(usage, {
+    argv,
+    optionsFirst: true,
+    version: commandVersion,
+    laxPlacement: true
+  });
 
   const {
     "<tx-hash>": txHash,
     ...options
-  } = neodoc.run(usage, {
-    argv,
-    optionsFirst: true,
-  });
+  } = parsedOptions;
 
-  const fetchExternal = options["--fetch-external"] || options["-x"];
-  const shortParticipantNames = options["--short-participant-names"] || options["-s"] || false;
+  const fetchExternal = options["--fetch-external"] ? true : false;
+  const shortParticipantNames = options["--short-participant-names"] ? true : false;
 
   return {
     fetchExternal,
