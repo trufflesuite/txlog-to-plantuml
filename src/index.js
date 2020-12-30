@@ -102,6 +102,15 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     let relation;
 
     if (isCall) {
+      // capture previous revert unwind details before processing call
+      if (revertRelation.src) {
+        if (revertRelation.src) {
+          pumlRelations.push(`${revertRelation.src} x--> ${revertRelation.dst}: ${revertRelation.err}`);
+          pumlRelations.push(...revertRelation.deactivations);
+          revertRelation = { src: null, dst: null, deactivations: [] }
+        }
+      }
+
       relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input}`
       pumlRelations.push(relation);
     } else {
@@ -120,15 +129,8 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         revertRelation.err = revertRelation.err || errMsg;
 
       } else if (source.returnKind === 'return') {
-        // handle the transition from revert unwinding to normal return
-        if (revertRelation.src) {
-          pumlRelations.push(`${revertRelation.src} x--> ${revertRelation.dst}: ${revertRelation.err}`);
-          pumlRelations.push(...revertRelation.deactivations);
-          revertRelation = { src: null, dst: null, deactivations: [] }
-        } else {
-          relation = `${source.alias} -> ${destination.alias} -- : ${source.output}`;
-          pumlRelations.push(relation);
-        }
+        relation = `${source.alias} -> ${destination.alias} -- : ${source.output}`;
+        pumlRelations.push(relation);
       }
     }
   }
