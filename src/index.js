@@ -69,8 +69,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
   }
 
   // store src and dst of revert message
-  const revertRelation = { src: null, dst: null, deactivations: [] }
-
+  let revertRelation = { src: null, dst: null, deactivations: [] }
 
   // keep track of current address for internal calls. is this right?
   let currentAddress;
@@ -100,26 +99,38 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     };
 
     let relation;
+
     if (isCall) {
       relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input}`
       pumlRelations.push(relation);
     } else {
       if (source.returnKind === 'revert') {
         revertRelation.deactivations.push(`deactivate ${source.alias}`);
+        // revert source should only be set once
         revertRelation.src = revertRelation.src || source.alias;
-        revertRelation.err = revertRelation.err || source.error.arguments[0].value.value.asString;
+
+        // and its err and destination can be be updated.
+        // This assumes the error does not change during unwinding
         revertRelation.dst = destination.alias;
+        revertRelation.err = revertRelation.err || source.error.arguments[0].value.value.asString;
 
       } else if (source.returnKind === 'return') {
-        relation = `${source.alias} -> ${destination.alias} -- : ${source.output}`;
-        pumlRelations.push(relation);
+        // handle the transition from revert unwinding to normal return
+        if (revertRelation.src) {
+          pumlRelations.push(`${revertRelation.src} x--> ${revertRelation.dst}: ${revertRelation.err}`);
+          pumlRelations.push(...revertRelation.deactivations);
+          revertRelation = { src: null, dst: null, deactivations: [] }
+        } else {
+          relation = `${source.alias} -> ${destination.alias} -- : ${source.output}`;
+          pumlRelations.push(relation);
+        }
       }
     }
   }
 
   // add revert if necessary
   if (revertRelation.src) {
-    pumlRelations.push(`${revertRelation.src} --> ${revertRelation.dst}: ${revertRelation.err}`);
+    pumlRelations.push(`${revertRelation.src} x--> ${revertRelation.dst}: ${revertRelation.err}`);
     pumlRelations.push(...revertRelation.deactivations);
   }
 
