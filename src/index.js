@@ -112,7 +112,11 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         // and its err and destination can be be updated.
         // This assumes the error does not change during unwinding
         revertRelation.dst = destination.alias;
-        revertRelation.err = revertRelation.err || source.error.arguments[0].value.value.asString;
+
+        // oh boy! is there a guarantee that all "active" versions of solidity will have these error messages?
+        // Can this be a guarantee from txLog?
+        const errMsg = source && source.error && source.error.arguments && source.error.arguments[0].value.value.asString || 'revert...';
+        revertRelation.err = revertRelation.err || errMsg;
 
       } else if (source.returnKind === 'return') {
         // handle the transition from revert unwinding to normal return
