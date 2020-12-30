@@ -11,6 +11,7 @@
     "@truffle/core": "^5.1.58",
     "@truffle/debugger": "^8.0.6",
     "@truffle/environment": "^0.2.38",
-    "neodoc": "^2.0.2"
+    "neodoc": "^2.0.2",
+    "plantuml-encoder": "^1.4.0"
   }
 }

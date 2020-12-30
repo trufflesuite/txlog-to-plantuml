@@ -1,6 +1,7 @@
 const fs = require('fs');
 const util = require("util");
 const neodoc = require("neodoc");
+const plantumlEncoder = require('plantuml-encoder')
 const { Environment } = require("@truffle/environment")
 
 const Codec = require("@truffle/codec");
@@ -187,8 +188,14 @@ const run = async (config) => {
   visit(txLog, null, umlActions);
 
   const puml = generateUml(umlActions, txHash, {shortParticipantNames});
+  const encoded = plantumlEncoder.encode(puml);
+  // const url = 'http://www.plantuml.com/plantuml/img/' + encoded
+  const url = 'https://www.planttext.com/api/plantuml/svg/' + encoded;
+  console.log(url);
+
   fs.writeFileSync(outFile, puml);
-  console.log(`Plantuml specs written to: ${outFile}`);
+  console.log(`\nPlantuml specs written to: ${outFile}`);
+
 }
 
 const parseOptions = (args) => {
