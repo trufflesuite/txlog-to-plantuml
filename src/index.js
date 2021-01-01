@@ -80,7 +80,8 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
 
     const sourceArgs = src.arguments ? arguments(src.arguments) : '';
     const destinationArgs = dst.arguments ? arguments(dst.arguments) : '';
-
+    const msgValue = isCall && dst.value ? `{ value: ${dst.value.toString()} }` : '';
+    
     if (isCall && src.type === 'callexternal') currentAddress = src.address
 
     const source = {
@@ -111,7 +112,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         }
       }
 
-      relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input}`
+      relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input} ${msgValue}`
       pumlRelations.push(relation);
     } else {
       if (source.returnKind === 'revert') {
