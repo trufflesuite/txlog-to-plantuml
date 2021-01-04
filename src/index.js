@@ -20,6 +20,7 @@ usage:
 options:
   -h --help                         Show help
   -v --version                      Show version
+  -c --compile-tests                Compile test sources
   -o --outfile=OUTFILE              Specify the output filename
   -s --short-participant-names      Generate short names for participants. This means
                                     <contract-name> instead of <address>:<contract-name>
@@ -168,24 +169,26 @@ const visit = (root, parent, umlActions=[]) => {
 
 const run = async (config) => {
   await Environment.detect(config);
-  const { txHash, fetchExternal, outFile, shortParticipantNames } = parseOptions(process.argv);
+  const { compileAll, compileTests, fetchExternal, outFile, shortParticipantNames, txHash } = parseOptions(process.argv);
 
   const cli = new CLIDebugger(
     config.with({
+      compileAll,
+      compileTests,
       fetchExternal,
-      logger: {
-        log: () => {}
-      }
-    }),
+      logger: { log: () => {} }
+     }),
     { txHash }
   );
 
   const bugger = await cli.connect();
   await bugger.continueUntilBreakpoint([]);
-
   const txLog = bugger.view($.txlog.views.transactionLog);
+
   const umlActions = [];
   visit(txLog, null, umlActions);
+
+  fs.writeFileSync(`${txHash}.json`, util.inspect(txLog, {depth: null}));
 
   const puml = generateUml(umlActions, txHash, {shortParticipantNames});
   const encoded = plantumlEncoder.encode(puml);
@@ -216,11 +219,21 @@ const parseOptions = (args) => {
     ...options
   } = parsedOptions;
 
+
+  // These two options have to be set inorder for debugger to compile
+  // sources.  The CLI handles this coupling and we have to maintain it here.
+  //
+  const compileAll = compileTests = options["--compile-tests"] ? true : false;
+
   const fetchExternal = options["--fetch-external"] ? true : false;
-  const shortParticipantNames = options["--short-participant-names"] ? true : false;
   const outFile =  options["--outfile"] || `${txHash}.puml`;
+  const shortParticipantNames = options["--short-participant-names"] ? true : false;
+
+  console.log(`\t--compile-all: ${compileAll}\n\t--compile-tests: ${compileTests}`)
 
   return {
+    'compile-all': compileAll, compileAll,
+    'compile-tests': compileTests, compileTests,
     fetchExternal,
     outFile,
     shortParticipantNames,
