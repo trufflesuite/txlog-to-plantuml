@@ -81,7 +81,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     const sourceArgs = src.arguments ? arguments(src.arguments) : '';
     const destinationArgs = dst.arguments ? arguments(dst.arguments) : '';
     const msgValue = isCall && dst.value ? `{ value: ${dst.value.toString()} }` : '';
-    
+
     if (isCall && src.type === 'callexternal') currentAddress = src.address
 
     const source = {
@@ -181,10 +181,7 @@ const run = async (config) => {
   );
 
   const bugger = await cli.connect();
-
-  while (!bugger.view($.trace.finished)) {
-    bugger.advance();
-  }
+  await bugger.continueUntilBreakpoint([]);
 
   const txLog = bugger.view($.txlog.views.transactionLog);
   const umlActions = [];
