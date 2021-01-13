@@ -130,7 +130,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         // oh boy! is there a guarantee that all "active" versions of solidity will have these error messages?
         // Can this be a guarantee from txLog?
         const errMsg = source && source.error && source.error.arguments && source.error.arguments[0].value.value.asString || 'revert...';
-        revertRelation.err = revertRelation.err || errMsg;
+        revertRelation.err = (revertRelation.err || errMsg).replace("\n", "\\n");
 
       } else if (source.returnKind === 'return') {
         relation = `${source.alias} -> ${destination.alias} -- : ${source.output}`;
