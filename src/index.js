@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const util = require("util");
 const neodoc = require("neodoc");
 const plantumlEncoder = require('plantuml-encoder')
@@ -21,6 +22,7 @@ options:
   -h --help                         Show help
   -v --version                      Show version
   -c --compile-tests                Compile test sources
+  -d --outdir=OUTDIR                Specify the output directory. [default: ./uml-output]
   -o --outfile=OUTFILE              Specify the output filename
   -s --short-participant-names      Generate short names for participants. This means
                                     <contract-name> instead of <address>:<contract-name>
@@ -188,7 +190,10 @@ const run = async (config) => {
   const umlActions = [];
   visit(txLog, null, umlActions);
 
-  fs.writeFileSync(`${txHash}.json`, util.inspect(txLog, {depth: null}));
+  // write json
+  const jsonTxlog = outFile.slice(0, -4) + 'json';
+  console.log('json output:', jsonTxlog)
+  fs.writeFileSync(jsonTxlog, util.inspect(txLog, {depth: null}));
 
   const puml = generateUml(umlActions, txHash, {shortParticipantNames});
   const encoded = plantumlEncoder.encode(puml);
@@ -227,7 +232,15 @@ const parseOptions = (args) => {
 
   const fetchExternal = options["--fetch-external"] ? true : false;
   const outFile =  options["--outfile"] || `${txHash}.puml`;
+  const outDir =  options["--outdir"];
   const shortParticipantNames = options["--short-participant-names"] ? true : false;
+
+  if (outDir !== '.') {
+    if (!fs.existsSync(outDir)) {
+      fs.mkdirSync(outDir)
+      console.log('Directory created: ', outDir);
+    }
+  }
 
   console.log(`\t--compile-all: ${compileAll}\n\t--compile-tests: ${compileTests}`)
 
@@ -235,7 +248,7 @@ const parseOptions = (args) => {
     'compile-all': compileAll, compileAll,
     'compile-tests': compileTests, compileTests,
     fetchExternal,
-    outFile,
+    outFile: path.resolve(outDir, outFile),
     shortParticipantNames,
     txHash
   };
