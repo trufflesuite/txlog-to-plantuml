@@ -72,8 +72,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
   const getNameAndAlias = (n, lastKnownAddress, isCall) => {
     let name, alias;
     if (n.type === 'transaction') {
-      name = `${n.origin.slice(2,5)}..${n.origin.slice(-4)}`;
-      alias = 'EOA'
+      alias = name = 'EOA'
       participants[name] = alias;
       if (isCall) legends.push({name: 'EOA', address: n.origin});
     } else {
