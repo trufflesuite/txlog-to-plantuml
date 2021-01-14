@@ -14,3 +14,17 @@ options:
                                     <contract-name> instead of <address>:<contract-name>
   -x --fetch-external               Fetch external sources from EtherScan and Sourcify
 ```
+
+
+## Plantuml server
+
+https://github.com/plantuml/plantuml-server
+
+```
+docker run -d -p 8080:8080 plantuml/plantuml-server:jetty
+
+### prereqs
+```
+$ sudo pacman -Sy jre-openjdk-headless
+$ sudo pacman -Sy maven``
+```
