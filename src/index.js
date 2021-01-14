@@ -59,7 +59,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     let name, alias;
     if (n.type === 'transaction') {
       name = `${n.origin.slice(2,5)}..${n.origin.slice(-4)}`;
-      alias = 'eow'
+      alias = 'EOA'
       participants[name] = alias;
     } else {
       name = constructName(n, lastKnownAddress);
@@ -147,7 +147,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
 
   const pumlParticipants = Object.entries(participants)
     .map(([k,v]) => {
-      const participantType = v === 'eow' ? 'actor' : 'participant';
+      const participantType = v === 'EOA' ? 'actor' : 'participant';
       return `${participantType} ${v} as "${k}"`
     })
 
