@@ -48,6 +48,7 @@ const arguments = args => {
 
 const generateUml = (actions, txHash, {shortParticipantNames}) => {
   let participantCounter = 0;
+  const aliases = {};
   const participants = {};
   const pumlRelations = [];
 
@@ -64,7 +65,13 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     } else {
       name = constructName(n, lastKnownAddress);
       if (!(name in participants)){
-        alias = `p${++participantCounter}`
+        let i = 0;
+        alias = `${n.contractName}_${(++i).toString().padStart(2, '0')}`;
+        while(alias in aliases) {
+          alias = `${n.contractName}_${(++i).toString().padStart(2, '0')}`;
+        }
+
+        aliases[alias] = true;
         participants[name] = alias;
       }
       alias = participants[name];
