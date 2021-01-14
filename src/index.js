@@ -46,22 +46,36 @@ const arguments = args => {
     : '-';
 }
 
+const buildLegend = participants => {
+  const header =[
+        '',
+        'legend\nParticipant details',
+        '<#fefece,#d0d000>|= Contract name |= address |= verified |',
+        ''
+  ].join('\n')
+  const rows = participants.map(p => `<#fefece>| ${p.name} | ${p.address} | ? |`).join('\n');
+  const footer = '\nendlegend\n\n';
+  return header + rows + footer;
+}
+
 const generateUml = (actions, txHash, {shortParticipantNames}) => {
   let participantCounter = 0;
   const aliases = {};
   const participants = {};
   const pumlRelations = [];
+  const legends = [];
 
   const constructName = (n, lastKnownAddress) => shortParticipantNames
     ?  `${n.contractName}`
     :  `${n.address||lastKnownAddress}:${n.contractName}`
 
-  const getNameAndAlias = (n, lastKnownAddress) => {
+  const getNameAndAlias = (n, lastKnownAddress, isCall) => {
     let name, alias;
     if (n.type === 'transaction') {
       name = `${n.origin.slice(2,5)}..${n.origin.slice(-4)}`;
       alias = 'EOA'
       participants[name] = alias;
+      if (isCall) legends.push({name: 'EOA', address: n.origin});
     } else {
       name = constructName(n, lastKnownAddress);
       if (!(name in participants)){
@@ -73,6 +87,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
 
         aliases[alias] = true;
         participants[name] = alias;
+        legends.push({name: n.contractName, address: n.address})
       }
       alias = participants[name];
     }
@@ -95,7 +110,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     if (isCall && src.type === 'callexternal') currentAddress = src.address
 
     const source = {
-      alias: getNameAndAlias(src, currentAddress).alias,
+      alias: getNameAndAlias(src, currentAddress, isCall).alias,
       error: src.error,
       input: `${src.functionName}(${sourceArgs})`,
       output: src.returnValues  && src.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
@@ -103,7 +118,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     };
 
     const destination = {
-      alias: getNameAndAlias(dst, currentAddress).alias,
+      alias: getNameAndAlias(dst, currentAddress, isCall).alias,
       error: dst.error,
       input: `${dst.functionName}(${destinationArgs})`,
       output: dst.returnValues && dst.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
@@ -156,13 +171,16 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     .map(([k,v]) => {
       const participantType = v === 'EOA' ? 'actor' : 'participant';
       return `${participantType} ${v} as "${k}"`
-    })
+    });
+
+  const pumlLegend = buildLegend(legends);
 
   const prologue = `@startuml\n\n`;
+  const skin = 'skinparam legendBackgroundColor #fefece\n\n'
   const epilogue = `\n\n@enduml\n`;
   const title = `title Txn Hash: ${txHash}\n\n`;
   const actors = pumlParticipants.join(`\n`) + '\n\n';
-  const puml = prologue + title + actors + pumlRelations.join(`\n`) + epilogue;
+  const puml = prologue + skin + title + actors + pumlRelations.join(`\n`) + pumlLegend + epilogue;
 
   return puml;
 }
