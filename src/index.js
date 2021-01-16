@@ -37,12 +37,12 @@ const codecInspect = (typedValue, options) => {
 const codecInspectWithType = (typedValue, options) => {
   const metaValue = typedValue.value ? typedValue.value : typedValue
   const value = codecInspect(metaValue, options);
-  return `${metaValue.type.typeHint} ${value}`;
+  return { type: metaValue.type.typeHint, value: value };
 }
 
 const arguments = args => {
   return args
-    ?  args.map(({name, value}) => `${value.type.typeHint} ${name} = ${codecInspect(value, { depth: null })}`) .join(", ")
+    ?  args.map(({name, value}) => ({name, type: value.type.typeHint, value: codecInspect(value, { depth: null })}))
     : '-';
 }
 
@@ -56,6 +56,22 @@ const buildLegend = participants => {
   const rows = participants.map(p => `<#fefece>| ${p.name} | ${p.address} | ? |`).join('\n');
   const footer = '\nendlegend\n\n';
   return header + rows + footer;
+}
+
+const buildTable = (data, isCall) => {
+  const header = isCall
+    ? '<#FEFECE,#FEFECE>|= type |= name |= value|\n'
+    : '<#FEFECE,#FEFECE>|= type |= value|\n';
+
+  const fn = isCall
+    ? r => `|${r.type} | ${r.name} | ${r.value} |`
+    : r => `|${r.type} | ${r.value} |`;
+
+  if (!data || !data.length) return null;
+  //if (!isCall) console.log(`data [${util.inspect(data, {depth: null})}]\n\n\n`);
+
+  const rows = data.map(fn).join('\n');
+  return header + rows
 }
 
 const generateUml = (actions, txHash, {shortParticipantNames}) => {
@@ -102,9 +118,10 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
   for (const {src, dst, isCall} of actions) {
     if (!src || !dst ) continue;
 
-    const sourceArgs = src.arguments ? arguments(src.arguments) : '';
-    const destinationArgs = dst.arguments ? arguments(dst.arguments) : '';
+    const sourceArgs = src.arguments && src.arguments.length ? arguments(src.arguments) : '';
+    const destinationArgs = dst.arguments && dst.arguments.length ? arguments(dst.arguments) : '';
     const msgValue = isCall && dst.value ? `{ value: ${dst.value.toString()} }` : '';
+    const sourceReturnValue = src.returnValues  && src.returnValues.map(rv => codecInspectWithType(rv));
 
     if (isCall && src.type === 'callexternal') currentAddress = src.address
 
@@ -112,14 +129,17 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
       alias: getNameAndAlias(src, currentAddress, isCall).alias,
       error: src.error,
       input: `${src.functionName}(${sourceArgs})`,
+      inputTable: buildTable(sourceArgs, isCall),
       output: src.returnValues  && src.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
+      outputTable: buildTable(sourceReturnValue, isCall),
       returnKind: src.returnKind
     };
 
     const destination = {
       alias: getNameAndAlias(dst, currentAddress, isCall).alias,
       error: dst.error,
-      input: `${dst.functionName}(${destinationArgs})`,
+      input: `${dst.functionName}()`,
+      inputTable: buildTable(destinationArgs, isCall),
       output: dst.returnValues && dst.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
       returnKind: dst.returnKind,
     };
@@ -136,7 +156,12 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         }
       }
 
-      relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input} ${msgValue}`
+      relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input} ${msgValue}`;
+
+      relation += destination.inputTable
+        ?  `\nnote left #FEFECE\n${destination.inputTable}\nend note\n\n`
+        : '';
+
       pumlRelations.push(relation);
     } else {
       if (source.returnKind === 'revert') {
@@ -154,7 +179,10 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         revertRelation.err = (revertRelation.err || errMsg).replace("\n", "\\n");
 
       } else if (source.returnKind === 'return') {
-        relation = `${source.alias} -> ${destination.alias} -- : ${source.output}`;
+        relation = `${source.alias} -> ${destination.alias} -- :`;
+        relation += source.outputTable
+          ?  `\nnote left #FEFECE\n${source.outputTable}\nend note\n\n`
+          : '';
         pumlRelations.push(relation);
       }
     }
