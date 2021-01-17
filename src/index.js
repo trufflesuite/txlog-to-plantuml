@@ -46,29 +46,37 @@ const arguments = args => {
     : '-';
 }
 
-const buildLegend = participants => {
-  const header =[
-        '',
-        'legend\nParticipant details',
-        '<#fefece,#d0d000>|= Contract name |= address |= verified |',
+const LEGEND_BG_COLOR = '#D0D000';
+const LEGEND_FG_COLOR = '#FEFECE';
+const LEGEND_COLOR_TUP = `<${LEGEND_FG_COLOR},${LEGEND_BG_COLOR}>`;
+
+const TABLE_BG_COLOR = '#FEFECE';
+const TABLE_FG_COLOR = '#FEFECE';
+const TABLE_COLOR_TUP = `<${TABLE_FG_COLOR},${TABLE_BG_COLOR}>`;
+
+  const buildLegend = participants => {
+    const header =[
+          '',
+          'legend\nParticipant details',
+          `${LEGEND_COLOR_TUP}|= Contract name |= address |= verified |`,
         ''
   ].join('\n')
-  const rows = participants.map(p => `<#fefece>| ${p.name} | ${p.address} | ? |`).join('\n');
+  const rows = participants.map(p => `<${LEGEND_FG_COLOR}>| ${p.name} | ${p.address} | ? |`).join('\n');
   const footer = '\nendlegend\n\n';
   return header + rows + footer;
 }
 
+
 const buildTable = (data, isCall) => {
   const header = isCall
-    ? '<#FEFECE,#FEFECE>|= type |= name |= value|\n'
-    : '<#FEFECE,#FEFECE>|= type |= value|\n';
+    ? `${TABLE_COLOR_TUP}|= type |= name |= value|\n`
+    : `${TABLE_COLOR_TUP}|= type |= value|\n`;
 
   const fn = isCall
     ? r => `|${r.type} | ${r.name} | ${r.value} |`
     : r => `|${r.type} | ${r.value} |`;
 
   if (!data || !data.length) return null;
-  //if (!isCall) console.log(`data [${util.inspect(data, {depth: null})}]\n\n\n`);
 
   const rows = data.map(fn).join('\n');
   return header + rows
@@ -163,7 +171,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
       relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input} ${msgValue}`;
 
       relation += destination.inputTable
-        ?  `\nnote left #FEFECE\n${destination.inputTable}\nend note\n\n`
+        ?  `\nnote left ${TABLE_FG_COLOR}\n${destination.inputTable}\nend note\n\n`
         : '';
 
       pumlRelations.push(relation);
@@ -173,7 +181,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     if (source.returnKind === 'return') {
       relation = `${source.alias} -> ${destination.alias} -- :`;
       relation += source.outputTable
-        ?  `\nnote left #FEFECE\n${source.outputTable}\nend note\n\n`
+        ?  `\nnote left ${TABLE_FG_COLOR}\n${source.outputTable}\nend note\n\n`
         : '';
       pumlRelations.push(relation);
     }
@@ -195,7 +203,6 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
       revertRelation.err = (revertRelation.err || errMsg).replace("\n", "\\n");
       continue
     }
-
   }
 
   // add revert if necessary
@@ -212,12 +219,20 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
 
   const pumlLegend = buildLegend(legends);
 
-  const prologue = `@startuml\n\n`;
-  const skin = 'skinparam legendBackgroundColor #fefece\n\n'
-  const epilogue = `\n\n@enduml\n`;
-  const title = `title Txn Hash: ${txHash}\n\n`;
-  const actors = pumlParticipants.join(`\n`) + '\n\n';
-  const puml = prologue + skin + title + actors + pumlRelations.join(`\n`) + pumlLegend + epilogue;
+  const epilogue = '@enduml';
+  const prologue = '@startuml';
+  const skin = `skinparam legendBackgroundColor ${TABLE_BG_COLOR}`
+  const title = `title Txn Hash: ${txHash}`;
+
+  const puml = [
+    prologue, '',
+    skin, '',
+    title, '',
+    pumlParticipants.join('\n'), '',
+    pumlRelations.join('\n'), '',
+    pumlLegend, '',
+    epilogue, ''
+  ].join('\n');
 
   return puml;
 }
