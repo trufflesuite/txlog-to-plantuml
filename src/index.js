@@ -81,6 +81,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
   const pumlRelations = [];
   const legends = [];
 
+  // lastKnownAddress cached for internal calls
   const constructName = (n, lastKnownAddress) => shortParticipantNames
     ?  `${n.contractName}`
     :  `${n.address||lastKnownAddress}:${n.contractName}`
@@ -90,10 +91,16 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     if (n.type === 'transaction') {
       alias = name = 'EOA'
       participants[name] = alias;
+
+      // build up legend data
       if (isCall) legends.push({name: 'EOA', address: n.origin});
+
     } else {
       name = constructName(n, lastKnownAddress);
+
       if (!(name in participants)){
+
+        // unknown participant, generate an alias
         let i = 0;
         alias = `${n.contractName}_${(++i).toString().padStart(2, '0')}`;
         while(alias in aliases) {
@@ -104,21 +111,24 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         participants[name] = alias;
         legends.push({name: n.contractName, address: n.address})
       }
+
       alias = participants[name];
     }
+
     return {name, alias};
   }
 
   // store src and dst of revert message
   let revertRelation = { src: null, dst: null, deactivations: [] }
 
-  // keep track of current address for internal calls. is this right?
+  // keep track of current address for internal calls.
   let currentAddress;
 
   for (const {src, dst, isCall} of actions) {
+
+    // skip the ends
     if (!src || !dst ) continue;
 
-    const sourceArgs = src.arguments && src.arguments.length ? arguments(src.arguments) : '';
     const destinationArgs = dst.arguments && dst.arguments.length ? arguments(dst.arguments) : '';
     const msgValue = isCall && dst.value ? `{ value: ${dst.value.toString()} }` : '';
     const sourceReturnValue = src.returnValues  && src.returnValues.map(rv => codecInspectWithType(rv));
@@ -128,9 +138,6 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     const source = {
       alias: getNameAndAlias(src, currentAddress, isCall).alias,
       error: src.error,
-      input: `${src.functionName}(${sourceArgs})`,
-      inputTable: buildTable(sourceArgs, isCall),
-      output: src.returnValues  && src.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
       outputTable: buildTable(sourceReturnValue, isCall),
       returnKind: src.returnKind
     };
@@ -140,7 +147,6 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
       error: dst.error,
       input: `${dst.functionName}()`,
       inputTable: buildTable(destinationArgs, isCall),
-      output: dst.returnValues && dst.returnValues.map(rv => codecInspectWithType(rv)).join(', '),
       returnKind: dst.returnKind,
     };
 
@@ -149,11 +155,9 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     if (isCall) {
       // capture previous revert unwind details before processing call
       if (revertRelation.src) {
-        if (revertRelation.src) {
-          pumlRelations.push(`${revertRelation.src} x--> ${revertRelation.dst}: ${revertRelation.err}`);
-          pumlRelations.push(...revertRelation.deactivations);
-          revertRelation = { src: null, dst: null, deactivations: [] }
-        }
+        pumlRelations.push(`${revertRelation.src} x--> ${revertRelation.dst}: ${revertRelation.err}`);
+        pumlRelations.push(...revertRelation.deactivations);
+        revertRelation = { src: null, dst: null, deactivations: [] }
       }
 
       relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input} ${msgValue}`;
@@ -163,29 +167,35 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         : '';
 
       pumlRelations.push(relation);
-    } else {
-      if (source.returnKind === 'revert') {
-        revertRelation.deactivations.push(`deactivate ${source.alias}`);
-        // revert source should only be set once
-        revertRelation.src = revertRelation.src || source.alias;
-
-        // and its err and destination can be be updated.
-        // This assumes the error does not change during unwinding
-        revertRelation.dst = destination.alias;
-
-        // oh boy! is there a guarantee that all "active" versions of solidity will have these error messages?
-        // Can this be a guarantee from txLog?
-        const errMsg = source && source.error && source.error.arguments && source.error.arguments[0].value.value.asString || 'revert...';
-        revertRelation.err = (revertRelation.err || errMsg).replace("\n", "\\n");
-
-      } else if (source.returnKind === 'return') {
-        relation = `${source.alias} -> ${destination.alias} -- :`;
-        relation += source.outputTable
-          ?  `\nnote left #FEFECE\n${source.outputTable}\nend note\n\n`
-          : '';
-        pumlRelations.push(relation);
-      }
+      continue
     }
+
+    if (source.returnKind === 'return') {
+      relation = `${source.alias} -> ${destination.alias} -- :`;
+      relation += source.outputTable
+        ?  `\nnote left #FEFECE\n${source.outputTable}\nend note\n\n`
+        : '';
+      pumlRelations.push(relation);
+    }
+
+    if (source.returnKind === 'revert') {
+      revertRelation.deactivations.push(`deactivate ${source.alias}`);
+      // revert source should only be set once
+      revertRelation.src = revertRelation.src || source.alias;
+
+      // and its err and destination can be be updated.
+      // This assumes the error does not change during unwinding
+      revertRelation.dst = destination.alias;
+
+      // oh boy! is there a guarantee that all "active" versions of solidity will have these error messages?
+      // Can this be a guarantee from txLog?
+      const errMsg = source && source.error && source.error.arguments && source.error.arguments[0].value.value.asString || 'revert...';
+
+      // escape multi line revert messages
+      revertRelation.err = (revertRelation.err || errMsg).replace("\n", "\\n");
+      continue
+    }
+
   }
 
   // add revert if necessary
