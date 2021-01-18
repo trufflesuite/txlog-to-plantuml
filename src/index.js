@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const util = require("util");
 const neodoc = require("neodoc");
-const plantumlEncoder = require('plantuml-encoder')
 const { Environment } = require("@truffle/environment")
+const { generateSequenceDiagramAssets } = require("./plantuml");
 
 const Codec = require("@truffle/codec");
 const { CLIDebugger } = require("@truffle/core/lib/debug/cli");
@@ -46,44 +46,20 @@ const arguments = args => {
     : '-';
 }
 
-const LEGEND_BG_COLOR = '#D0D000';
-const LEGEND_FG_COLOR = '#FEFECE';
-const LEGEND_COLOR_TUP = `<${LEGEND_FG_COLOR},${LEGEND_BG_COLOR}>`;
-
-const TABLE_BG_COLOR = '#FEFECE';
-const TABLE_FG_COLOR = '#FEFECE';
-const TABLE_COLOR_TUP = `<${TABLE_FG_COLOR},${TABLE_BG_COLOR}>`;
-
-  const buildLegend = participants => {
-    const header =[
-          '',
-          'legend\nParticipant details',
-          `${LEGEND_COLOR_TUP}|= Contract name |= address |= verified |`,
-        ''
-  ].join('\n')
-  const rows = participants.map(p => `<${LEGEND_FG_COLOR}>| ${p.name} | ${p.address} | ? |`).join('\n');
-  const footer = '\nendlegend\n\n';
-  return header + rows + footer;
-}
-
-
 const buildTable = (data, isCall) => {
   const header = isCall
-    ? `${TABLE_COLOR_TUP}|= type |= name |= value|\n`
-    : `${TABLE_COLOR_TUP}|= type |= value|\n`;
+    ? 'type name value'.split(' ')
+    : 'type value'.split(' ');
 
-  const fn = isCall
-    ? r => `|${r.type} | ${r.name} | ${r.value} |`
-    : r => `|${r.type} | ${r.value} |`;
+  let rows = [];
+  if (data && data.length) {
+    rows = data.map(d => header.map(h => d[h]));
+  }
 
-  if (!data || !data.length) return null;
-
-  const rows = data.map(fn).join('\n');
-  return header + rows
+  return { header, rows }
 }
 
 const generateUml = (actions, txHash, {shortParticipantNames}) => {
-  let participantCounter = 0;
   const aliases = {};
   const participants = {};
   const pumlRelations = [];
@@ -101,7 +77,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
       participants[name] = alias;
 
       // build up legend data
-      if (isCall) legends.push({name: 'EOA', address: n.origin});
+      if (isCall) legends.push({ name: 'EOA', address: n.origin });
 
     } else {
       name = constructName(n, lastKnownAddress);
@@ -158,36 +134,39 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
       returnKind: dst.returnKind,
     };
 
-    let relation;
-
     if (isCall) {
       // capture previous revert unwind details before processing call
       if (revertRelation.src) {
-        pumlRelations.push(`${revertRelation.src} x--> ${revertRelation.dst}: ${revertRelation.err}`);
+        pumlRelations.push({type: 'revert', source: revertRelation.src, destination: revertRelation.dst, message: revertRelation.err});
+
+        // deactivate? is this needed here? push out before resetting?
         pumlRelations.push(...revertRelation.deactivations);
         revertRelation = { src: null, dst: null, deactivations: [] }
       }
 
-      relation = `${source.alias} -> ${destination.alias} ++ : ${destination.input} ${msgValue}`;
+      pumlRelations.push({
+        type: 'call',
+        source: source.alias,
+        destination: destination.alias,
+        message: `${destination.input} ${msgValue}`,
+        annotation: destination.inputTable
+      });
 
-      relation += destination.inputTable
-        ?  `\nnote left ${TABLE_FG_COLOR}\n${destination.inputTable}\nend note\n\n`
-        : '';
-
-      pumlRelations.push(relation);
       continue
     }
 
     if (source.returnKind === 'return') {
-      relation = `${source.alias} -> ${destination.alias} -- :`;
-      relation += source.outputTable
-        ?  `\nnote left ${TABLE_FG_COLOR}\n${source.outputTable}\nend note\n\n`
-        : '';
-      pumlRelations.push(relation);
+      pumlRelations.push({
+        type: 'return',
+        source: source.alias,
+        destination: destination.alias,
+        message: '',
+        annotation: source.outputTable
+      });
     }
 
     if (source.returnKind === 'revert') {
-      revertRelation.deactivations.push(`deactivate ${source.alias}`);
+      revertRelation.deactivations.push({ type: 'deactivate', participant: source.alias });
       // revert source should only be set once
       revertRelation.src = revertRelation.src || source.alias;
 
@@ -207,34 +186,11 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
 
   // add revert if necessary
   if (revertRelation.src) {
-    pumlRelations.push(`${revertRelation.src} x--> ${revertRelation.dst}: ${revertRelation.err}`);
+    pumlRelations.push({type: 'revert', source: revertRelation.src, destination: revertRelation.dst, message: revertRelation.err});
     pumlRelations.push(...revertRelation.deactivations);
   }
 
-  const pumlParticipants = Object.entries(participants)
-    .map(([k,v]) => {
-      const participantType = v === 'EOA' ? 'actor' : 'participant';
-      return `${participantType} ${v} as "${k}"`
-    });
-
-  const pumlLegend = buildLegend(legends);
-
-  const epilogue = '@enduml';
-  const prologue = '@startuml';
-  const skin = `skinparam legendBackgroundColor ${TABLE_BG_COLOR}`
-  const title = `title Txn Hash: ${txHash}`;
-
-  const puml = [
-    prologue, '',
-    skin, '',
-    title, '',
-    pumlParticipants.join('\n'), '',
-    pumlRelations.join('\n'), '',
-    pumlLegend, '',
-    epilogue, ''
-  ].join('\n');
-
-  return puml;
+  return { legends, participants, pumlRelations }
 }
 
 const visit = (root, parent, umlActions=[]) => {
@@ -244,7 +200,6 @@ const visit = (root, parent, umlActions=[]) => {
   }
   umlActions.push({src: root, dst: parent, isCall: false });
 }
-
 
 const run = async (config) => {
   await Environment.detect(config);
@@ -272,15 +227,15 @@ const run = async (config) => {
   console.log('json output:', jsonTxlog)
   fs.writeFileSync(jsonTxlog, util.inspect(txLog, {depth: null}));
 
-  const puml = generateUml(umlActions, txHash, {shortParticipantNames});
-  const encoded = plantumlEncoder.encode(puml);
-  // const url = 'http://www.plantuml.com/plantuml/img/' + encoded
-  const url = 'https://www.planttext.com/api/plantuml/svg/' + encoded;
-  console.log(url);
+  const uml = generateUml(umlActions, txHash, {shortParticipantNames});
+
+  // invoke plantuml things
+  const { encodedUrl, puml } = generateSequenceDiagramAssets({ ...uml, txHash });
+
+  console.log(encodedUrl);
 
   fs.writeFileSync(outFile, puml);
   console.log(`\nPlantuml specs written to: ${outFile}`);
-
 }
 
 const parseOptions = (args) => {
