@@ -61,11 +61,9 @@ const parseOptions = (args) => {
   if (outDir !== '.') {
     if (!fs.existsSync(outDir)) {
       fs.mkdirSync(outDir)
-      console.log('Directory created: ', outDir);
+      //console.log('Directory created: ', outDir);
     }
   }
-
-  console.log(`\t--compile-all: ${compileAll}\n\t--compile-tests: ${compileTests}`)
 
   return {
     'compile-all': compileAll, compileAll,

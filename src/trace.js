@@ -199,9 +199,13 @@ const traceTransaction = async (truffleConfig, options) => {
   const umlActions = [];
   visit(txLog, null, umlActions);
 
+  const basename = outFile.slice(0, -4);
+  const svgOutput = basename + 'svg.txt'
+
   // write json
-  const jsonTxlog = outFile.slice(0, -4) + 'json';
+  const jsonTxlog = basename + 'json';
   console.log('json output:', jsonTxlog)
+
   fs.writeFileSync(jsonTxlog, util.inspect(txLog, {depth: null}));
 
   const uml = generateUml(umlActions, txHash, {shortParticipantNames});
@@ -209,9 +213,7 @@ const traceTransaction = async (truffleConfig, options) => {
   // invoke plantuml things
   const { encodedUrl, puml } = generateSequenceDiagramAssets({ ...uml, txHash });
 
-  // todo: implement better logging and documen it.
-  //       this will be useful for piping commands
-  console.log(encodedUrl);
+  fs.writeFileSync(svgOutput, encodedUrl);
 
   fs.writeFileSync(outFile, puml);
   console.log(`\nPlantuml specs written to: ${outFile}`);
