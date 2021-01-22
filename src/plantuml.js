@@ -95,11 +95,25 @@ const generateSequenceDiagramAssets = ({ legends, participants, pumlRelations, t
   const prologue = '@startuml';
   const skin = `skinparam legendBackgroundColor ${YELLOW}`
   const title = `title Txn Hash: ${txHash}`;
+  const truffleTag = 'header Insights by Truffle';
+  const style = `<style>
+
+header {
+  HorizontalAlignment left
+  FontColor purple
+  FontSize 14
+  Padding 10
+}
+
+</style>
+`;
 
   const puml = [
     prologue, '',
     options, '',
     skin, '',
+    style, '',
+    truffleTag, '',
     title, '',
     pumlParticipants.join('\n'), '',
     directedPairs.join('\n'), '',
