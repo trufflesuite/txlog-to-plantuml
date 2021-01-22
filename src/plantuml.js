@@ -91,12 +91,14 @@ const generateSequenceDiagramAssets = ({ legends, participants, pumlRelations, t
   const directedPairs = createDirectedPairs(pumlRelations);
 
   const epilogue = '@enduml';
+  const options = 'autonumber';
   const prologue = '@startuml';
   const skin = `skinparam legendBackgroundColor ${YELLOW}`
   const title = `title Txn Hash: ${txHash}`;
 
   const puml = [
     prologue, '',
+    options, '',
     skin, '',
     title, '',
     pumlParticipants.join('\n'), '',
