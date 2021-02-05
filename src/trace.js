@@ -113,7 +113,12 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     if (isCall) {
       // capture previous revert unwind details before processing call
       if (revertRelation.src) {
-        pumlRelations.push({type: 'revert', source: revertRelation.src, destination: revertRelation.dst, message: revertRelation.err});
+        pumlRelations.push({
+          destination: revertRelation.dst,
+          message: revertRelation.err,
+          source: revertRelation.src,
+          type: 'revert'
+        });
 
         // deactivate? is this needed here? push out before resetting?
         pumlRelations.push(...revertRelation.deactivations);
@@ -162,7 +167,12 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
 
   // add revert if necessary
   if (revertRelation.src) {
-    pumlRelations.push({type: 'revert', source: revertRelation.src, destination: revertRelation.dst, message: revertRelation.err});
+    pumlRelations.push({
+      destination: revertRelation.dst,
+      message: revertRelation.err,
+      source: revertRelation.src,
+      type: 'revert'
+    });
     pumlRelations.push(...revertRelation.deactivations);
   }
 
