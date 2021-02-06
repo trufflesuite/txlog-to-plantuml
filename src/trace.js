@@ -22,6 +22,15 @@ const arguments = args => args
   ?  args.map(({name, value}) => ({name, type: value.type.typeHint, value: codecInspect(value, { depth: null })}))
   : '-';
 
+const functionName = n => {
+  if (n.kind === 'constructor') return 'constructor()';
+
+  // Todo: Indicate whether this is an internal / external / delegate / call
+  //       invocation
+  const fn = n.functionName || '';
+  return `${fn}()`
+}
+
 const buildTable = (data, isCall) => {
   const header = isCall
     ? 'type name value'.split(' ')
@@ -105,7 +114,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     const destination = {
       alias: getNameAndAlias(dst, currentAddress, isCall).alias,
       error: dst.error,
-      input: `${dst.functionName}()`,
+      input: functionName(dst),
       inputTable: buildTable(destinationArgs, isCall),
       returnKind: dst.returnKind,
     };
