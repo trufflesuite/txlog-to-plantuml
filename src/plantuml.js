@@ -38,21 +38,6 @@ const makeNote = ({ header, rows }) => {
   return note.join('\n');
 }
 
-const buildTable = (data, isCall) => {
-  const header = isCall
-    ? `${YELLOW_ON_YELLOW}|= type |= name |= value|\n`
-    : `${YELLOW_ON_YELLOW}|= type |= value|\n`;
-
-  const fn = isCall
-    ? r => `|${r.type} | ${r.name} | ${r.value} |`
-    : r => `|${r.type} | ${r.value} |`;
-
-  if (!data || !data.length) return null;
-
-  const rows = data.map(fn).join('\n');
-  return header + rows
-}
-
 const createDirectedPairs = pairs => {
   return pairs.map(p => {
     if (p.type === 'revert') {
