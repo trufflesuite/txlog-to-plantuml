@@ -45,8 +45,19 @@ const createDirectedPairs = pairs => {
     }
 
     if (p.type === 'call' || p.type === 'return') {
-      const lifeline = p.type === 'call' ? '++' : '--';
-      let directed = `${p.source} -> ${p.destination} ${lifeline}: ${p.message}`;
+
+      const activateLifeline = !p.isMessageKind;
+      let lifeline, arrowStyle;
+
+      if (activateLifeline) {
+        arrowStyle = '->';
+        lifeline = p.type === 'call' ? '++' : '--';
+      } else {
+        arrowStyle = '-[#green]->';
+        lifeline = '';
+      }
+
+      let directed = `${p.source} ${arrowStyle} ${p.destination} ${lifeline}: ${p.message}`;
 
       if (p.annotation) {
         const note = makeNote(p.annotation);

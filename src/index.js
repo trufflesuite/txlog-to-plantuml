@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const util = require("util");
 const neodoc = require("neodoc");
-const traceTransaction = require('./trace');
+const { traceTransaction } = require('./trace');
 
 const commandName = "tx2seq";
 const truffleCommand = "truffle run tx2seq";

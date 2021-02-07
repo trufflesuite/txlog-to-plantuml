@@ -107,8 +107,10 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
     const source = {
       alias: getNameAndAlias(src, currentAddress, isCall).alias,
       error: src.error,
+      // Is this a message kind?
+      isMessageKind: dst.kind === 'message',
       outputTable: buildTable(sourceReturnValue, isCall),
-      returnKind: src.returnKind
+      returnKind: src.returnKind,
     };
 
     const destination = {
@@ -116,7 +118,7 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
       error: dst.error,
       input: functionName(dst),
       inputTable: buildTable(destinationArgs, isCall),
-      returnKind: dst.returnKind,
+      returnKind: dst.returnKind
     };
 
     if (isCall) {
@@ -139,7 +141,8 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
         source: source.alias,
         destination: destination.alias,
         message: `${destination.input} ${msgValue}`,
-        annotation: destination.inputTable
+        annotation: destination.inputTable,
+        isMessageKind: source.isMessageKind
       });
 
       continue
@@ -190,10 +193,17 @@ const generateUml = (actions, txHash, {shortParticipantNames}) => {
 
 const visit = (root, parent, umlActions=[]) => {
   umlActions.push({src: parent, dst: root, isCall: true });
+
   for (const action of root.actions) {
     visit(action, root, umlActions);
   }
-  umlActions.push({src: root, dst: parent, isCall: false });
+
+  // Exclude stackframe pop
+  // This treats messages as one way message
+  // Todo: is this be corret?
+  if (root.kind !== 'message') {
+    umlActions.push({src: root, dst: parent, isCall: false });
+  }
 }
 
 const traceTransaction = async (truffleConfig, options) => {
@@ -239,4 +249,7 @@ const traceTransaction = async (truffleConfig, options) => {
 }
 
 
-module.exports = traceTransaction
+module.exports = {
+  traceTransaction,
+  visit
+}
