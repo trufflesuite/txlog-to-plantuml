@@ -7,7 +7,7 @@ const Codec = require("@truffle/codec");
 const { CLIDebugger } = require("@truffle/core/lib/debug/cli");
 const { selectors: $ } = require("@truffle/debugger");
 
-const codecInspect = (typedValue, options) => {
+const codecInspect = typedValue => {
   const data = new Codec.Format.Utils.Inspect.ResultInspector(typedValue);
   return util.inspect(data);
 }
@@ -44,7 +44,7 @@ const buildTable = (data, isCall) => {
   return { header, rows }
 }
 
-const generateUml = (actions, txHash, {shortParticipantNames}) => {
+const generateUml = (actions, {shortParticipantNames}) => {
   const aliases = {};
   const participants = {};
   const pumlRelations = [];
@@ -237,7 +237,7 @@ const traceTransaction = async (truffleConfig, options) => {
 
   fs.writeFileSync(jsonTxlog, util.inspect(txLog, {depth: null}));
 
-  const uml = generateUml(umlActions, txHash, {shortParticipantNames});
+  const uml = generateUml(umlActions, {shortParticipantNames});
 
   // invoke plantuml things
   const { encodedUrl, puml } = generateSequenceDiagramAssets({ ...uml, txHash });
