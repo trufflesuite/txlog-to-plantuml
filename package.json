@@ -8,7 +8,8 @@
   "private": true,
   "scripts": {
     "debug:link": "yarn link @truffle/codec; yarn link @truffle/core; yarn link @truffle/debugger; yarn link @truffle/environment",
-    "debug:unlink": "yarn unlink @truffle/codec; yarn unlink @truffle/core; yarn unlink @truffle/debugger; yarn unlink @truffle/environment"
+    "debug:unlink": "yarn unlink @truffle/codec; yarn unlink @truffle/core; yarn unlink @truffle/debugger; yarn unlink @truffle/environment",
+    "test": "jest"
   },
   "dependencies": {
     "@truffle/codec": "^0.9.2",
@@ -18,5 +19,8 @@
     "ethers": "^5.0.30",
     "neodoc": "^2.0.2",
     "plantuml-encoder": "^1.4.0"
+  },
+  "devDependencies": {
+    "jest": "^26.6.3"
   }
 }
