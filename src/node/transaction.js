@@ -27,7 +27,9 @@ module.exports = class Transaction {
   }
 
   umlID(umlParticipants) {
-    return umlParticipants.getAlias(this.address);
+    // HACK: isEOA
+    // return umlParticipants.getAlias(this, isEOA=true);
+    return 'EOA';
   }
 
   inspect() {
