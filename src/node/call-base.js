@@ -76,8 +76,8 @@ module.exports = class Call {
       : [];
   }
 
-  umlID() {
-    return `${this.address}:${this.contractName}`
+  umlID(umlParticipants) {
+    return umlParticipants.getAlias(this.address);
   }
 
   extractValues(collection) {

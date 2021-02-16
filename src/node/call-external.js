@@ -3,13 +3,14 @@ const util = require('util');
 
 module.exports = class CallExternal extends Frame {
 
-  constructor(node) {
+  constructor(node, umlParticipants) {
     super(node);
     this.address = node.address;
     this.isDelegate = node.isDelegate;
     this.kind = node.kind;
     this.value = node.value;
     this.data = node.data;
+    umlParticipants.add(this);
   }
 
   getFunctionName() {

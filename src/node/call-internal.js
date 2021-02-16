@@ -3,9 +3,10 @@ const util = require('util');
 
 module.exports = class CallInternal extends Frame {
 
-  constructor(node, address) {
+  constructor(node, address, umlParticipants) {
     super(node);
     this.address = address;
+    umlParticipants.add(this);
   }
 
   getFunctionName() {

@@ -25,8 +25,8 @@ module.exports = class Frame extends Call {
 
       umlCommands.push(new PlantUMLRelation({
         arrow: 'x-[#orange]->',
-        destination: this.umlID(),
-        source: source.umlID(),
+        destination: this.umlID(umlParticipants),
+        source: source.umlID(umlParticipants),
         isCall: false,
         lifeline: '--',
         returnValues: source.getErrorValues()
@@ -40,8 +40,8 @@ module.exports = class Frame extends Call {
 
     umlCommands.push(new PlantUMLRelation({
       arrow,
-      source: parent.umlID(),
-      destination: this.umlID(),
+      source: parent.umlID(umlParticipants),
+      destination: this.umlID(umlParticipants),
       isCall: true,
       lifeline,
       message: this.getFunctionName(),
@@ -59,14 +59,14 @@ module.exports = class Frame extends Call {
     if (this.kind === 'message') return;
 
     if (this.returnKind === 'unwind') {
-      state.deactivations.push(new PlantUMLDeactivate(this.umlID()));;
+      state.deactivations.push(new PlantUMLDeactivate(this.umlID(umlParticipants)));;
       return;
     }
 
     if (this.returnKind === 'selfdestruct') {
       console.log('SELFDESTRUCT');
       umlCommands.push(new PlantUMLRelation({
-        source: this.umlID(),
+        source: this.umlID(umlParticipants),
         arrow: 'x[#55ff11]-->',
         destination: this.beneficiary,
         isCall: false,
@@ -79,7 +79,7 @@ module.exports = class Frame extends Call {
 
     if (this.returnKind === 'revert') {
       state.revertSource.push(this);
-      state.deactivations.push(new PlantUMLDeactivate(this.umlID()));;
+      state.deactivations.push(new PlantUMLDeactivate(this.umlID(umlParticipants)));;
 
       // only pop for call-external
       // state.address.pop();
@@ -87,8 +87,8 @@ module.exports = class Frame extends Call {
     }
 
     umlCommands.push(new PlantUMLRelation({
-      destination: parent.umlID(),
-      source: this.umlID(),
+      destination: parent.umlID(umlParticipants),
+      source: this.umlID(umlParticipants),
       isCall: false,
       lifeline: '--',
       returnValues: this.getReturnValues()

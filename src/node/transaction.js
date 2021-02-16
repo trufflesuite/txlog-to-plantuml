@@ -2,13 +2,12 @@ const { PlantUMLDeactivate, PlantUMLRelation } = require('./plant');
 
 module.exports = class Transaction {
 
-  constructor({ origin }) {
-    this.origin = origin;
+  constructor({ origin }, umlParticipants) {
+    this.address = origin;
+    umlParticipants.add(this, true);
   }
 
-  push(parent, umlCommands, umlParticipants, state) {
-    console.log('write uml prologue');
-  }
+  push(parent, umlCommands, umlParticipants, state) { }
 
   pop(parent, umlCommands, umlParticipants, state) {
     console.log('write uml epilogue');
@@ -16,8 +15,8 @@ module.exports = class Transaction {
       const [source] = state.revertSource;
       umlCommands.push(new PlantUMLRelation({
         arrow: 'x-[#orange]->',
-        destination: this.umlID(),
-        source: source.umlID(),
+        source: source.umlID(umlParticipants),
+        destination: this.umlID(umlParticipants),
         isCall: false,
         lifeline: '--',
         returnValues: source.getErrorValues()
@@ -27,8 +26,8 @@ module.exports = class Transaction {
     }
   }
 
-  umlID() {
-    return `${this.origin}`;
+  umlID(umlParticipants) {
+    return umlParticipants.getAlias(this.address);
   }
 
   inspect() {
