@@ -6,6 +6,7 @@ const { Environment } = require("@truffle/environment")
 const { CLIDebugger } = require("@truffle/core/lib/debug/cli");
 const { selectors: $ } = require("@truffle/debugger");
 
+const Actors = require('./actors');
 const Transaction = require('./node/transaction');
 const CallExternal = require('./node/call-external');
 const CallInternal = require('./node/call-internal');
@@ -31,6 +32,12 @@ const generatePlantUml = (umlCommands, umlParticipants, {shortParticipantNames, 
   ];
 
   // add participants
+  const players = umlParticipants.getAllParticipants().map(player => {
+    const role = player.alias === 'EOA' ? 'actor' : 'participant';
+    return `${role} ${player.alias} as "${player.displayName}"`
+  });
+
+  plantuml.push(...players, '');
 
   // add relations
   for (const cmd of umlCommands) {
@@ -52,11 +59,11 @@ const visit = (root, parent, umlCommands, umlParticipants, state={}) => {
   let currentNode;
   switch(root.type) {
     case 'transaction':
-      currentNode = new Transaction(root);
+      currentNode = new Transaction(root, umlParticipants);
       break
 
     case 'callexternal':
-      currentNode = new CallExternal(root);
+      currentNode = new CallExternal(root, umlParticipants);
       state.address.push(currentNode.address);
       // console.log('root', util.inspect(root, {depth: null}));
       // console.log(currentNode);
@@ -64,7 +71,7 @@ const visit = (root, parent, umlCommands, umlParticipants, state={}) => {
 
     case 'callinternal':
       // assign last known address
-      currentNode = new CallInternal(root, state.address[state.address.length - 1]);
+      currentNode = new CallInternal(root, state.address[state.address.length - 1], umlParticipants);
       break
 
     default:
@@ -107,7 +114,7 @@ const traceTransaction = async (truffleConfig, options) => {
   fs.writeFileSync(jsonTxlog, util.inspect(txLog, {depth: null}));
 
   const umlCommands = [];
-  const umlParticipants = new Set();
+  const umlParticipants = new Actors({shortParticipantNames});
   const state = {
     revertSource: [],
     deactivations: [],

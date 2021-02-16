@@ -65,7 +65,7 @@ class PlantUMLRelation {
       }
 
       let hrow = true;
-      for (const line of row.value.split('\n')) {
+      for (const line of row.value.split('\\n')) {
         if (hrow) {
           acc.push([row.type, row.name, line]);
           hrow = !hrow;
