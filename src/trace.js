@@ -11,7 +11,10 @@ const Transaction = require('./node/transaction');
 const CallExternal = require('./node/call-external');
 const CallInternal = require('./node/call-internal');
 
+const tuple = (fg, bg) => `<${fg},${bg}>`;
 const YELLOW = '#FEFECE';
+const YELLOW_VIVID = '#D0D000';
+const YELLOW_ON_YELLOW_VIVID = tuple(YELLOW, YELLOW_VIVID);
 
 const generatePlantUml = (umlCommands, umlParticipants, {shortParticipantNames, txHash}) => {
   const plantuml = [
@@ -44,8 +47,17 @@ const generatePlantUml = (umlCommands, umlParticipants, {shortParticipantNames, 
     plantuml.push(cmd.render());
   }
 
-  plantuml.push('');
-  // plantuml.push(createLegendTable(legend));
+  const legendData = [
+    '',
+    'legend',
+    'Participant details',
+    `${YELLOW_ON_YELLOW_VIVID}|= Alias |= Contract name |= Address |`,
+    ...umlParticipants.getAllParticipants().map(e => `<${YELLOW}>| ${e.alias} | ${e.contractName} | ${e.address} |`),
+    'endlegend',
+    ''
+  ];
+
+  plantuml.push(...legendData);
 
   plantuml.push('@enduml')
 

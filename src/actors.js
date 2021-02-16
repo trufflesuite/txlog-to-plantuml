@@ -25,6 +25,7 @@ module.exports = class Actors {
     if (isEOA) {
       alias = 'EOA';
       displayName = this.shortParticipantNames ? alias : address;
+      contractName = 'Externally Owned Account'
     } else {
       alias = `${contractName}_${(++count).toString().padStart(2, 0)}`;
       while (alias in this.alias2address) {
@@ -35,7 +36,9 @@ module.exports = class Actors {
 
     this.alias2address[alias] = address;
     this.address2entry[address] = {
+      address,
       alias,
+      contractName,
       displayName: this.shortParticipantNames ? alias : displayName
     }
   }
@@ -56,5 +59,8 @@ module.exports = class Actors {
       actors.push(this.address2entry[ady]);
     }
     return actors;
+  }
+
+  getLegendData() {
   }
 }
