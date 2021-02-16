@@ -144,7 +144,8 @@ const traceTransaction = async (truffleConfig, options) => {
 
   const svgOutput = basename + 'svg.txt'
   fs.writeFileSync(svgOutput, encodedUrl);
-  console.log(encodedUrl.replace('https://www.planttext.com/api/plantuml/svg','http://teams:8080/uml'));
+  // console.log(encodedUrl.replace('https://www.planttext.com/api/plantuml/svg','http://teams:8080/uml'));
+  console.log(encodedUrl.replace('https://www.planttext.com/api/plantuml/svg','http://13.82.143.137:8080/uml'));
 }
 
 

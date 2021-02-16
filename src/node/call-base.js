@@ -77,7 +77,7 @@ module.exports = class Call {
   }
 
   umlID(umlParticipants) {
-    return umlParticipants.getAlias(this.address);
+    return umlParticipants.getAlias(this);
   }
 
   extractValues(collection) {

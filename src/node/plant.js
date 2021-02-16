@@ -55,8 +55,6 @@ class PlantUMLRelation {
     const header = ['type', 'name', 'value'];
     let dataRows = this.parameters || this.returnValues || [];
 
-    const isEmpty = dataRows.length === 0;
-
     // handle multiline string values
     dataRows = dataRows.reduce((acc, row) => {
       if (typeof row.value !== 'string') {
@@ -106,7 +104,7 @@ class PlantUMLRelation {
     );
 
     const sep = '\\n\\\n';
-    const table = isEmpty ? '' : data.join(sep);
+    const table = data.join(sep);
 
     const lines = [
       `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${table}`
