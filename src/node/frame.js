@@ -1,4 +1,14 @@
-const { PlantUMLDeactivate, PlantUMLRelation } = require('./plant');
+// const { PlantUMLDeactivate, PlantUMLRelation }
+
+const {
+  PlantUMLDeactivate,
+  CallRelation,
+  ReturnRelation,
+  RevertRelation,
+  MessageRelation,
+  SelfDestructRelation
+} = require('./plant');
+
 const Call = require("./call-base");
 
 module.exports = class Frame extends Call {
@@ -23,13 +33,10 @@ module.exports = class Frame extends Call {
     if (state.revertSource.length) {
       const source = state.revertSource.shift();
 
-      umlCommands.push(new PlantUMLRelation({
-        arrow: 'x-[#orange]->',
+      umlCommands.push(new RevertRelation({
         destination: this.umlID(umlParticipants),
         source: source.umlID(umlParticipants),
-        isCall: false,
-        lifeline: '--',
-        returnValues: source.getErrorValues()
+        errorValues: source.getErrorValues()
       }));
 
       while (state.deactivations.length) {
@@ -37,16 +44,16 @@ module.exports = class Frame extends Call {
       }
     }
 
+    const Rel = this.kind === 'message'
+      ? MessageRelation
+      : CallRelation
 
-    umlCommands.push(new PlantUMLRelation({
-      arrow,
+    umlCommands.push(new Rel({
       source: parent.umlID(umlParticipants),
       destination: this.umlID(umlParticipants),
-      isCall: true,
-      lifeline,
       message: this.getFunctionName(),
       parameters: this.getArguments(),
-      value: this.value
+      value: this.value || 0
     }));
   }
 
@@ -65,14 +72,9 @@ module.exports = class Frame extends Call {
 
     if (this.returnKind === 'selfdestruct') {
       console.log('SELFDESTRUCT');
-      umlCommands.push(new PlantUMLRelation({
+      umlCommands.push(new SelfDestructRelation({
         source: this.umlID(umlParticipants),
-        arrow: 'x[#55ff11]-->',
         destination: this.beneficiary,
-        isCall: false,
-        lifeline: '--',
-        // Todo: have a way to override message
-        returnValues: [{type: 'selfdestruct', name: '', value: 'selfdestruct'}]
       }));
       return;
     }
@@ -86,11 +88,9 @@ module.exports = class Frame extends Call {
       return;
     }
 
-    umlCommands.push(new PlantUMLRelation({
+    umlCommands.push(new ReturnRelation({
       destination: parent.umlID(umlParticipants),
       source: this.umlID(umlParticipants),
-      isCall: false,
-      lifeline: '--',
       returnValues: this.getReturnValues()
     }));
   }

@@ -1,4 +1,4 @@
-const { PlantUMLDeactivate, PlantUMLRelation } = require('./plant');
+const { RevertRelation } = require('./plant');
 
 module.exports = class Transaction {
 
@@ -7,19 +7,15 @@ module.exports = class Transaction {
     umlParticipants.add(this, true);
   }
 
-  push(parent, umlCommands, umlParticipants, state) { }
+  push(_parent, _umlCommands, _umlParticipants) { }
 
-  pop(parent, umlCommands, umlParticipants, state) {
-    console.log('write uml epilogue');
+  pop(_parent, umlCommands, umlParticipants, state) {
     if (state.revertSource.length) {
       const [source] = state.revertSource;
-      umlCommands.push(new PlantUMLRelation({
-        arrow: 'x-[#orange]->',
+      umlCommands.push(new RevertRelation ({
         source: source.umlID(umlParticipants),
         destination: this.umlID(umlParticipants),
-        isCall: false,
-        lifeline: '--',
-        returnValues: source.getErrorValues()
+        errorValues: source.getErrorValues()
       }));
 
       umlCommands.push(...state.deactivations);
