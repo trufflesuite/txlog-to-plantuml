@@ -64,7 +64,6 @@ class Relation {
 
     return `{ ${value} ${displayUnit} }`;
   }
-
 }
 
 class CallRelation extends Relation {
@@ -77,35 +76,36 @@ class CallRelation extends Relation {
 
   render(unit='gwei', displayUnit='GWEI') {
     const messageHeader = ['type', 'name', 'value'];
-    let dataRows = splitValueRow(this.parameters).map(r => encodeTableRow(r, '|'))
 
-    const data = [
-      `${this.message}(`,
-      YELLOW_ON_YELLOW + encodeTableRow(messageHeader, '|='),
-      ...dataRows,
-      `) ${this.getEthRender(unit, displayUnit)}`
-    ];
+    let umlMessage = `${this.message}()`;
+    if (this.parameters.length) {
+      let dataRows = splitValueRow(this.parameters).map(r => encodeTableRow(r, '|'))
 
-    const sep = '\\n\\\n';
-    const table = data.join(sep);
+      const data = [
+        `${this.message}(`,
+          YELLOW_ON_YELLOW + encodeTableRow(messageHeader, '|='),
+          ...dataRows,
+          `) ${this.getEthRender(unit, displayUnit)}`
+      ];
 
-    const lines = [
-      `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${table}`
-    ];
-    return lines.join('\n');
+      const sep = '\\n\\\n';
+      umlMessage = data.join(sep);
+    }
+
+    return `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${umlMessage}`;
   }
 }
 
 class SelfDestructRelation extends Relation {
   constructor(option) {
-    super({...option, arrow: '-[#55ff11]->', lifeline:'--'});
+    super({...option, arrow: 'x-[#green]->', lifeline:'--'});
     const { returnValues } = option;
     this.returnValues = returnValues;
   }
 
   render() {
-    const table = `SELFDESTRUCT`;
-    return `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${table}`
+    const umlMessage = '<&warning> <color #red>**SELFDESTRUCT**</color>';
+    return `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${umlMessage}`
   }
 }
 
@@ -118,49 +118,50 @@ class ReturnRelation extends Relation {
 
   render() {
     const messageHeader = ['type', 'name', 'value'];
-    let table = '';
+    let umlMessage = '';
     if (this.returnValues.length) {
       let dataRows = splitValueRow(this.returnValues)
         .map(r => encodeTableRow(r, '|'))
 
       const data = [
-        `Return (`,
+        'Return (',
         YELLOW_ON_YELLOW + encodeTableRow(messageHeader, '|='),
         ...dataRows,
         `)`
       ];
 
       const sep = '\\n\\\n';
-      table = data.join(sep);
+      umlMessage = data.join(sep);
     }
 
-    return `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${table}`
+    return `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${umlMessage}`
     ;
   }
 }
 
 class RevertRelation extends Relation {
   constructor(option) {
-    super({...option, arrow: 'x-[#orange]->', lifeline: '--'});
+    super({...option, arrow: 'x-[#red]->', lifeline: '--'});
     const { errorValues } = option;
     this.errorValues = errorValues;
   }
 
   render() {
-    const messageHeader = ['type', 'name', 'value'];
+    let umlMessage = '<&warning> <color #red>**REVERT!**</color>'
     let dataRows = splitValueRow(this.errorValues);
 
-    const data = [
-      `REVERT! (`,
-      YELLOW_ON_YELLOW + encodeTableRow(messageHeader, '|='),
-      ...dataRows.map(r => encodeTableRow(r, '|')),
-      `)`
-    ];
+    if (dataRows.length) {
+      const data = [
+        '<&warning> <color #red>**REVERT!**</color> (',
+        ...dataRows.map(r => YELLOW_ON_YELLOW + encodeTableRow(r, '|')),
+        `)`
+      ];
 
-    const sep = '\\n\\\n';
-    const table = data.join(sep);
+      const sep = '\\n\\\n';
+      umlMessage = data.join(sep);
+    }
 
-    return `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${table}`;
+    return `"${this.source}" ${this.arrow} "${this.destination}" ${this.lifeline}: ${umlMessage}`;
   }
 }
 
