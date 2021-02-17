@@ -56,7 +56,4 @@ module.exports = class Actors {
     }
     return actors;
   }
-
-  getLegendData() {
-  }
 }
