@@ -1,5 +1,3 @@
-// const { PlantUMLDeactivate, PlantUMLRelation }
-
 const {
   PlantUMLDeactivate,
   CallRelation,
@@ -18,15 +16,6 @@ module.exports = class Frame extends Call {
   }
 
   push(parent, umlCommands, umlParticipants, state) {
-    let arrow, lifeline;
-
-    if (this.kind === 'message' && this.value.gt(0)) {
-      arrow = '-[#green]->';
-      lifeline = '';
-    } else {
-      arrow = '->';
-      lifeline = '++';
-    }
 
     // try/catch mechanics.
     // any reverts on state?
@@ -71,10 +60,9 @@ module.exports = class Frame extends Call {
     }
 
     if (this.returnKind === 'selfdestruct') {
-      console.log('SELFDESTRUCT');
       umlCommands.push(new SelfDestructRelation({
         source: this.umlID(umlParticipants),
-        destination: this.beneficiary,
+        destination: umlParticipants.getFirstAliasForAddress(this.beneficiary),
       }));
       return;
     }
