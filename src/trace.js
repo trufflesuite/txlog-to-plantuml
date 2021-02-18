@@ -1,10 +1,8 @@
 const fs = require('fs');
 const util = require("util");
 const plantumlEncoder = require('plantuml-encoder');
-
-const { Environment } = require("@truffle/environment")
-const { CLIDebugger } = require("@truffle/core/lib/debug/cli");
-const { selectors: $ } = require("@truffle/debugger");
+const { getTxLog } = require("./debugger");
+const BigNumber = require('bignumber.js');
 
 const Actors = require('./actors');
 const Transaction = require('./node/transaction');
@@ -100,24 +98,9 @@ const visit = (root, parent, umlCommands, umlParticipants, state={}) => {
 }
 
 const traceTransaction = async (truffleConfig, options) => {
-  const { compileAll, compileTests, fetchExternal, outFile, shortParticipantNames, txHash } = options;
+  const { outFile, shortParticipantNames, txHash } = options;
 
-  await Environment.detect(truffleConfig);
-
-  const cli = new CLIDebugger(
-    truffleConfig.with({
-      compileAll,
-      compileTests,
-      fetchExternal,
-      logger: { log: () => {} }
-     }),
-    { txHash }
-  );
-
-  const bugger = await cli.connect();
-  await bugger.continueUntilBreakpoint([]);
-  const txLog = bugger.view($.txlog.views.transactionLog);
-
+  txLog = await getTxLog(truffleConfig, options);
   const basename = outFile.slice(0, -4);
 
   // write json
