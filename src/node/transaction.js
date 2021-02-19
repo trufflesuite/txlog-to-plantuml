@@ -1,39 +1,36 @@
-const { RevertRelation } = require('./plant');
+const { RevertRelation } = require("./plant");
 
 module.exports = class Transaction {
-
-  constructor({ origin }, umlParticipants) {
+  constructor ({ origin }, umlParticipants) {
     this.address = origin;
     umlParticipants.add(this, true);
   }
 
-  push(_parent, _umlCommands, _umlParticipants) { }
+  push (_parent, _umlCommands, _umlParticipants) {}
 
-  pop(_parent, umlCommands, umlParticipants, state) {
+  pop (_parent, umlCommands, umlParticipants, state) {
     if (state.revertSource.length) {
       const [source] = state.revertSource;
-      umlCommands.push(new RevertRelation ({
-        source: source.umlID(umlParticipants),
-        destination: this.umlID(umlParticipants),
-        errorValues: source.getErrorValues()
-      }));
+      umlCommands.push(
+        new RevertRelation({
+          source: source.umlID(umlParticipants),
+          destination: this.umlID(umlParticipants),
+          errorValues: source.getErrorValues()
+        })
+      );
 
       umlCommands.push(...state.deactivations);
     }
   }
 
-  umlID(umlParticipants) {
+  umlID (umlParticipants) {
     // HACK: isEOA
     // return umlParticipants.getAlias(this, isEOA=true);
-    return 'EOA';
+    return "EOA";
   }
 
-  inspect() {
-    let out = [
-      'Transaction:',
-      `origin: ${this.origin}`,
-    ];
-    return out.join('\n  ');
+  inspect () {
+    let out = ["Transaction:", `origin: ${this.origin}`];
+    return out.join("\n  ");
   }
-
-}
+};

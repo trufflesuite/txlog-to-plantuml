@@ -1,16 +1,15 @@
-const Codec = require('@truffle/codec');
-const util = require('util');
+const Codec = require("@truffle/codec");
+const util = require("util");
 
 module.exports = class Call {
-
-  constructor(option) {
+  constructor (option) {
     // The name of the function being called. Will be undefined for
     // constructors, fallback functions, or calls that aren't to functions at
     // all.
     this.functionName = option.functionName;
 
     // The name of the contract being called.
-    this.contractName = option.contractName
+    this.contractName = option.contractName;
 
     // arguments: An array of arguments passed to the function. Each argument
     // is given as a { name: ..., value: ...} pair, where name is a string (if
@@ -62,36 +61,38 @@ module.exports = class Call {
     this.beneficiary = option.beneficiary;
   }
 
-  getArguments() {
+  getArguments () {
     return this.extractValues(this.arguments);
   }
 
-  getReturnValues() {
+  getReturnValues () {
     return this.extractValues(this.returnValues);
   }
 
-  getErrorValues() {
+  getErrorValues () {
     return this.error && this.error.arguments
       ? this.extractValues(this.error.arguments)
       : [];
   }
 
-  umlID(umlParticipants) {
+  umlID (umlParticipants) {
     return umlParticipants.getAlias(this);
   }
 
-  extractValues(collection) {
+  extractValues (collection) {
     if (!collection || !collection.map) {
-      return [{ type: '¯\\_(ツ)_/¯', name: '¯\\_(ツ)_/¯', value: 'REVERT' }];
+      return [{ type: "¯\\_(ツ)_/¯", name: "¯\\_(ツ)_/¯", value: "REVERT" }];
     }
 
-    return collection.map(({value, name}) => {
-      let inspectedValue = new Codec.Format.Utils.Inspect.ResultInspector(value);
+    return collection.map(({ value, name }) => {
+      let inspectedValue = new Codec.Format.Utils.Inspect.ResultInspector(
+        value
+      );
       return {
         name,
         type: value.type.typeClass,
-        value: util.inspect(inspectedValue, {depth: null})
+        value: util.inspect(inspectedValue, { depth: null })
       };
-    })
+    });
   }
-}
+};

@@ -1,5 +1,5 @@
 module.exports = class Actors {
-  constructor(option) {
+  constructor (option) {
     this.shortParticipantNames = option.shortParticipantNames || false;
 
     this.addressKeyPairs = new Set();
@@ -9,7 +9,7 @@ module.exports = class Actors {
     this.alias2address = {};
   }
 
-  add({address, contractName}, isEOA=false) {
+  add ({ address, contractName }, isEOA = false) {
     const key = `${address}:${contractName}`;
     if (this.addressKeyPairs.has(key)) {
       return;
@@ -24,14 +24,16 @@ module.exports = class Actors {
     let alias;
     let displayName;
     if (isEOA) {
-      alias = displayName = 'EOA';
-      contractName = 'Externally Owned Account'
+      alias = displayName = "EOA";
+      contractName = "Externally Owned Account";
     } else {
       alias = `${contractName}_${(++count).toString().padStart(2, 0)}`;
       while (alias in this.alias2address) {
         alias = `${contractName}_${(++count).toString().padStart(2, 0)}`;
       }
-      displayName = this.shortParticipantNames ? alias : `${address}:${contractName}`;
+      displayName = this.shortParticipantNames
+        ? alias
+        : `${address}:${contractName}`;
     }
 
     this.alias2address[alias] = key;
@@ -40,16 +42,16 @@ module.exports = class Actors {
       alias,
       contractName,
       displayName: this.shortParticipantNames ? alias : displayName
-    }
+    };
   }
 
-  getAlias({address, contractName}) {
+  getAlias ({ address, contractName }) {
     const key = `${address}:${contractName}`;
     const entry = this.addressKey2entry[key];
     return entry.alias;
   }
 
-  getFirstAliasForAddress(address) {
+  getFirstAliasForAddress (address) {
     for (const key of this.addressKeyPairs) {
       if (key.startsWith(address)) {
         return this.addressKey2entry[key].alias;
@@ -58,11 +60,11 @@ module.exports = class Actors {
     return address;
   }
 
-  getAllParticipants() {
+  getAllParticipants () {
     const actors = [];
     for (const ady of this.addressKeyPairs) {
       actors.push(this.addressKey2entry[ady]);
     }
     return actors;
   }
-}
+};

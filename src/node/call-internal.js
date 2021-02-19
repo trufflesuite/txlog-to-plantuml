@@ -1,23 +1,20 @@
-const Frame = require('./frame');
-const util = require('util');
+const Frame = require("./frame");
+const util = require("util");
 
 module.exports = class CallInternal extends Frame {
-
-  constructor(node, address, umlParticipants) {
+  constructor (node, address, umlParticipants) {
     super(node);
     this.address = address;
     umlParticipants.add(this);
   }
 
-  getFunctionName() {
-    return this.functionName
-      ? this.functionName
-      : 'unknown-internal-name';
+  getFunctionName () {
+    return this.functionName ? this.functionName : "unknown-internal-name";
   }
 
-  inspect() {
+  inspect () {
     let out = [
-      'CallIxternal:',
+      "CallIxternal:",
       `address: ${this.address}`,
       `contractName: ${this.contractName}`,
       `functionName: ${this.getFunctionName()}`
@@ -25,11 +22,14 @@ module.exports = class CallInternal extends Frame {
 
     if (this.arguments.length) {
       const args = this.getArguments()
-        .map(({name, type, value}) => `  type: ${type}, name: ${name}, value: ${util.inspect(value)}`)
-        .join('\n    ');
-      out = out.concat(['arguments:'].concat(args))
+        .map(
+          ({ name, type, value }) =>
+            `  type: ${type}, name: ${name}, value: ${util.inspect(value)}`
+        )
+        .join("\n    ");
+      out = out.concat(["arguments:"].concat(args));
     }
 
-    return out.join('\n  ');
+    return out.join("\n  ");
   }
-}
+};
