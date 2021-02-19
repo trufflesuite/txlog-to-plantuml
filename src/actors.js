@@ -51,6 +51,11 @@ module.exports = class Actors {
     return entry.alias;
   }
 
+  getAddressForAlias (alias) {
+    const key = this.alias2address[alias];
+    return key ? key.split(":")[0] : key;
+  }
+
   getFirstAliasForAddress (address) {
     for (const key of this.addressKeyPairs) {
       if (key.startsWith(address)) {

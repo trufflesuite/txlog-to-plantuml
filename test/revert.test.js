@@ -4,9 +4,11 @@ const Actors = require("../src/actors");
 jest.mock("../src/debugger");
 const {
   CallRelation: PCall,
-  ReturnRelation: PRet,
-  RevertRelation: PRev,
-  PlantUMLDeactivate: PKill
+  ReturnRelation: PReturn,
+  RevertRelation: PRevert,
+  PlantUMLDeactivate: PDeactivate,
+  MessageRelation: PMessage,
+  SelfDestructRelation: PSelfdestruct
 } = require("../src/node/plant");
 
 const relationsToMatch = (commands, expectedRelations) =>
@@ -34,30 +36,36 @@ describe("Reverts", () => {
     visit(revertTransaction, null, umlCommands, actors, state);
     expect(umlCommands.length).toBe(5);
     expect(
-      relationsToMatch(umlCommands, [PCall, PCall, PRev, PKill, PKill])
+      relationsToMatch(umlCommands, [
+        PCall,
+        PCall,
+        PRevert,
+        PDeactivate,
+        PDeactivate
+      ])
     ).toBe(true);
 
-    const [c1, c2, rev, k1, k2] = umlCommands;
+    const [call1, call2, revert, deactivate1, deactivate2] = umlCommands;
 
-    expect(c1.value.toString()).toBe("0"); // no value
-    expect(c1.message).toBe("test_a_revert"); // no value
-    expect(c1.destination).toBe("Entry_01");
-    verifyTypes(c1.parameters[0], { name: "x", type: "uint", value: "9" });
+    expect(call1.value.toString()).toBe("0"); // no value
+    expect(call1.message).toBe("test_a_revert"); // no value
+    expect(call1.destination).toBe("Entry_01");
+    verifyTypes(call1.parameters[0], { name: "x", type: "uint", value: "9" });
 
-    expect(c2.value.toString()).toBe("0"); // no value
-    expect(c2.message).toBe("inc_revert"); // no value
-    expect(c2.destination).toBe("First_01");
-    verifyTypes(c1.parameters[0], { name: "x", type: "uint", value: "9" });
+    expect(call2.value.toString()).toBe("0"); // no value
+    expect(call2.message).toBe("inc_revert"); // no value
+    expect(call2.destination).toBe("First_01");
+    verifyTypes(call1.parameters[0], { name: "x", type: "uint", value: "9" });
 
     // it should revert the entire transaction
-    expect(rev.source).toBe("First_01");
-    expect(rev.destination).toBe("EOA");
-    expect(rev.arrow).toBe("x-[#red]->");
-    verifyTypes(rev.errorValues[0], { type: "string", value: `'drats!'` });
+    expect(revert.source).toBe("First_01");
+    expect(revert.destination).toBe("EOA");
+    expect(revert.arrow).toBe("x-[#red]->");
+    verifyTypes(revert.errorValues[0], { type: "string", value: `'drats!'` });
 
     // it should deactivate lifelines
-    expect(k1.participant).toBe("First_01");
-    expect(k2.participant).toBe("Entry_01");
+    expect(deactivate1.participant).toBe("First_01");
+    expect(deactivate2.participant).toBe("Entry_01");
   });
 
   describe("respects try/catch mechanic", () => {
@@ -72,16 +80,16 @@ describe("Reverts", () => {
           PCall,
           PCall,
           PCall,
-          PRev, // the revert
-          PKill, // deactivate a lifeline
+          PRevert,
+          PDeactivate,
           PCall, // continue with business
-          PRet,
+          PReturn,
           PCall,
           PCall,
-          PRet,
-          PRet,
-          PRet,
-          PRet
+          PReturn,
+          PReturn,
+          PReturn,
+          PReturn
         ])
       ).toBe(true);
     });
@@ -92,14 +100,14 @@ describe("Reverts", () => {
     });
 
     test("is caught", () => {
-      const [rev, kill] = umlCommands.slice(3);
-      expect(kill.participant).toBe("Second_01");
-      expect(rev.source).toBe("Second_01");
-      expect(rev.destination).toBe("First_01");
-      expect(rev.message).toBe(undefined); // there should be no message
-      expect(rev.arrow).toBe("x-[#red]->"); // arrow should be red
-      expect(rev.lifeline).toBe("--");
-      verifyTypes(rev.errorValues[0], {
+      const [revert, deactivate] = umlCommands.slice(3);
+      expect(deactivate.participant).toBe("Second_01");
+      expect(revert.source).toBe("Second_01");
+      expect(revert.destination).toBe("First_01");
+      expect(revert.message).toBe(undefined); // there should be no message
+      expect(revert.arrow).toBe("x-[#red]->"); // arrow should be red
+      expect(revert.lifeline).toBe("--");
+      verifyTypes(revert.errorValues[0], {
         type: "string",
         value: String.raw`'Rats! Conditions are imperfect\nIm a bit sleepy...'`
       });
