@@ -1,18 +1,18 @@
-const { PlantUMLDeactivate: Subject } = require('../src/node/plant');
+const { PlantUMLDeactivate: Subject } = require("../src/node/plant");
 
-describe('PlantUMLDeactivate', () => {
+describe("PlantUMLDeactivate", () => {
   let node, puml;
 
   beforeAll(() => {
-    node = 'NODE';
+    node = "NODE";
     puml = new Subject(node);
   });
 
-  test('it is defined', () => {
+  test("it is defined", () => {
     expect(Subject).toBeDefined();
   });
 
-  test('renders', () => {
+  test("renders", () => {
     expect(puml.render()).toBe('deactivate "NODE"');
   });
 });

@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 const util = require("util");
 const neodoc = require("neodoc");
-const { traceTransaction } = require('./trace');
+const { traceTransaction } = require("./trace");
 
 const commandName = "tx2seq";
 const truffleCommand = "truffle run tx2seq";
@@ -24,12 +24,12 @@ options:
   -x --fetch-external               Fetch external sources from EtherScan and Sourcify
 `;
 
-const run = async (config) => {
+const run = async config => {
   const commandOptions = parseOptions(process.argv);
-  await traceTransaction(config, commandOptions)
-}
+  await traceTransaction(config, commandOptions);
+};
 
-const parseOptions = (args) => {
+const parseOptions = args => {
   // convert raw args for neodoc
   // process.argv will roughly be: `node <truffle-path> run tx2seq ...`
   // and we want `truffle run tx2seq`
@@ -42,37 +42,37 @@ const parseOptions = (args) => {
     laxPlacement: true
   });
 
-  const {
-    "<tx-hash>": txHash,
-    ...options
-  } = parsedOptions;
-
+  const { "<tx-hash>": txHash, ...options } = parsedOptions;
 
   // These two options have to be set inorder for debugger to compile
   // sources.  The CLI handles this coupling and we have to maintain it here.
   //
-  const compileAll = compileTests = options["--compile-tests"] ? true : false;
+  const compileAll = (compileTests = options["--compile-tests"] ? true : false);
 
   const fetchExternal = options["--fetch-external"] ? true : false;
-  const outFile =  options["--outfile"] || `${txHash}.puml`;
-  const outDir =  options["--outdir"];
-  const shortParticipantNames = options["--short-participant-names"] ? true : false;
+  const outFile = options["--outfile"] || `${txHash}.puml`;
+  const outDir = options["--outdir"];
+  const shortParticipantNames = options["--short-participant-names"]
+    ? true
+    : false;
 
-  if (outDir !== '.') {
+  if (outDir !== ".") {
     if (!fs.existsSync(outDir)) {
-      fs.mkdirSync(outDir)
+      fs.mkdirSync(outDir);
       //console.log('Directory created: ', outDir);
     }
   }
 
   return {
-    'compile-all': compileAll, compileAll,
-    'compile-tests': compileTests, compileTests,
+    "compile-all": compileAll,
+    compileAll,
+    "compile-tests": compileTests,
+    compileTests,
     fetchExternal,
     outFile: path.resolve(outDir, outFile),
     shortParticipantNames,
     txHash
   };
-}
+};
 
 module.exports = util.callbackify(run);

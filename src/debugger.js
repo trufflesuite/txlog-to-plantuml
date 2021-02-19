@@ -1,4 +1,4 @@
-const { Environment } = require("@truffle/environment")
+const { Environment } = require("@truffle/environment");
 const { CLIDebugger } = require("@truffle/core/lib/debug/cli");
 const { selectors: $ } = require("@truffle/debugger");
 
@@ -13,16 +13,15 @@ const getTxLog = async (truffleConfig, options) => {
       compileTests,
       fetchExternal,
       logger: { log: () => {} }
-     }),
+    }),
     { txHash }
   );
 
   const bugger = await cli.connect();
   await bugger.continueUntilBreakpoint([]);
   return await bugger.view($.txlog.views.transactionLog);
-}
-
+};
 
 module.exports = {
   getTxLog
-}
+};
