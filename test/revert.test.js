@@ -1,4 +1,3 @@
-const util = require("util");
 const { visit } = require("../src/trace");
 const Actors = require("../src/actors");
 jest.mock("../src/debugger");
@@ -6,19 +5,10 @@ const {
   CallRelation: PCall,
   ReturnRelation: PReturn,
   RevertRelation: PRevert,
-  PlantUMLDeactivate: PDeactivate,
-  MessageRelation: PMessage,
-  SelfDestructRelation: PSelfdestruct
+  PlantUMLDeactivate: PDeactivate
 } = require("../src/node/plant");
 
-const relationsToMatch = (commands, expectedRelations) =>
-  commands.every((cmd, i) => cmd instanceof expectedRelations[i]);
-
-const verifyTypes = (obj, expected) => {
-  for (let [k, v] of Object.entries(expected)) {
-    expect(obj).toHaveProperty(k, v);
-  }
-};
+const { relationsToMatch, verifyTypes } = require("./helper");
 
 const revertTransaction = require("./seed/revert.transaction");
 const revertCatch = require("./seed/revert.catch");
@@ -119,5 +109,3 @@ describe("Reverts", () => {
     });
   });
 });
-
-// console.log(util.inspect(umlCommands, {depth:null, colors: true}));

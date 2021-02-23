@@ -8,17 +8,8 @@ const {
   RevertRelation: PRevert,
   PlantUMLDeactivate: PDeactivate,
   MessageRelation: PMessage,
-  SelfDestructRelation: PSelfdestruct,
+  SelfDestructRelation: PSelfdestruct
 } = require("../src/node/plant");
-
-const relationsToMatch = (commands, expectedRelations) =>
-  commands.every((cmd, i) => cmd instanceof expectedRelations[i]);
-
-const verifyTypes = (obj, expected) => {
-  for (let [k, v] of Object.entries(expected)) {
-    expect(obj).toHaveProperty(k, v);
-  }
-};
 
 const revertCatch = require("./seed/revert.catch");
 
@@ -44,14 +35,12 @@ describe("Renders", () => {
     const rex = /\(.+\)$/s;
 
     const renderedText = revertNode.render();
-    const renderedParamRows = renderedText.match(rex)[0].split('\n');
+    const renderedParamRows = renderedText.match(rex)[0].split("\n");
     // rows = 2 (for open and close parens) + 2 for split line
     expect(renderedParamRows.length).toBe(4);
   });
 
-  test.skip("array input as multiple table rows", () => {
-
-  })
+  test.skip("array input as multiple table rows", () => {});
 });
 
 // console.log(util.inspect(umlCommands, {depth:null, colors: true}));

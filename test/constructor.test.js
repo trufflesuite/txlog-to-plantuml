@@ -1,21 +1,13 @@
-// const BigNumber = require('bignumber.js');
 const { visit } = require("../src/trace");
 const Actors = require("../src/actors");
 jest.mock("../src/debugger");
 const { CallRelation, ReturnRelation } = require("../src/node/plant");
 
-const relationsToMatch = (commands, expectedRelations) =>
-  commands.every((cmd, i) => cmd instanceof expectedRelations[i]);
-
-const verifyTypes = (obj, expected) => {
-  for (let [k, v] of Object.entries(expected)) {
-    expect(obj).toHaveProperty(k, v);
-  }
-};
-
 const seedBasic = require("./seed/ctr.basic");
 const seedWithContractParam = require("./seed/ctr.contract.param");
 const seedWithValue = require("./seed/ctr.value");
+
+const { relationsToMatch, verifyTypes } = require("./helper");
 
 describe("Constructors", () => {
   let umlCommands, actors, state;
