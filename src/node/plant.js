@@ -12,12 +12,20 @@ const splitValueRow = xs => {
       return acc;
     }
 
-    let hrow = true;
-    for (const line of row.value.split("\\n")) {
-      if (hrow) {
+    // add a new table row if the value column has multiple lines
+    let needsHeader = true;
+    for (let line of row.value.split("\n")) {
+      line = line.trim();
+      if (needsHeader) {
+        // exclude the opening brace
+        if (line === "[") continue;
+        // add the header row
         acc.push([row.type, row.name, line]);
-        hrow = !hrow;
+        needsHeader = !needsHeader;
       } else {
+        // exclude the closing brace
+        if (line === "]") continue;
+        // add a data row with just the value column
         acc.push(["", "", line]);
       }
     }
@@ -33,9 +41,7 @@ const encodeTableRow = (
   sep = sep.trim();
   const left = `${sep} `;
   const right = " |";
-
   const xs = Array.isArray(row) ? row : colNames.map(c => row[c]);
-
   return left + xs.join(` ${sep} `) + right;
 };
 
@@ -152,7 +158,15 @@ class RevertRelation extends Relation {
 
   render () {
     let umlMessage = "<&warning> <color #red>**REVERT!**</color>";
-    let dataRows = splitValueRow(this.errorValues);
+
+    // un-escaped linefeeds that may be part of a revert message
+    const filteredErrorValues = this.errorValues.map(row =>
+      typeof row.value === "string"
+        ? { ...row, value: row.value.replace("\\n", "\n") }
+        : row
+    );
+
+    let dataRows = splitValueRow(filteredErrorValues);
 
     if (dataRows.length) {
       const data = [
