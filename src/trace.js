@@ -119,10 +119,10 @@ const traceTransaction = async (truffleConfig, options) => {
   txLog = await getTxLog(truffleConfig, options);
   const basename = outFile.slice(0, -4);
 
-  // write json
-  const jsonTxlog = basename + "json";
-  console.log("json output:", jsonTxlog);
-  fs.writeFileSync(jsonTxlog, util.inspect(txLog, { depth: null }));
+  // write js
+  const jsTxlog = basename + "js";
+  console.log("js output:", jsTxlog);
+  fs.writeFileSync(jsTxlog, util.inspect(txLog, { depth: null }));
 
   const umlCommands = [];
   const umlParticipants = new Actors({ shortParticipantNames });
