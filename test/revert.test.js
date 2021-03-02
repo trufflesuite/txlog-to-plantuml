@@ -45,7 +45,7 @@ describe("Reverts", () => {
     expect(call2.value.toString()).toBe("0"); // no value
     expect(call2.message).toBe("inc_revert"); // no value
     expect(call2.destination).toBe("First_01");
-    verifyTypes(call1.parameters[0], { name: "x", type: "uint", value: "9" });
+    verifyTypes(call2.parameters[0], { name: "x", type: "uint", value: "9" });
 
     // it should revert the entire transaction
     expect(revert.source).toBe("First_01");
