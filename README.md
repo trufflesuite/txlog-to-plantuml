@@ -9,7 +9,6 @@ by the pioneering decoding work of the Truffle debugger.
 
 ## Commands
 
-
 ```
 Truffle Transaction Visualizer
 
@@ -29,30 +28,25 @@ options:
 The visualizer can improve current workflows and introduce new safeguards in
 your current dapp development practices. It is a communication tool that
 presents meaningful information across debugging, onboarding, validation,
-auditing and documentation concerns. 
+auditing and documentation concerns.
 
 The visualizer generates a Plantuml document that by itself can be viewed in
-your editor of choice, or rendered by a plantuml server. The plantuml document
+your editor of choice, or rendered by a plantuml server. Plantuml documents
 can be annotated for different needs.
 
 For example...
 
 ### Debugging
 
-Getting the **Big Picture**. The sequence diagrams shows the debugger's summary
+Seeing the **Big Picture**. The sequence diagrams shows the debugger's summary
 and outcome of a transaction that highlights **Reverts**, **selfdestructs** and
-message calls between contract participants.
-
-Studying a Sequence diagram of a transaction gives you context to reason about
-contract interactions before diving in with other tools. You could even discuss
-the diagram with your colleagues before examining code.
-
+message calls between contract participants. This is an excellent way to
+quickly understand contract interactions before diving in with other tools. The
+diagram itself can be shared with colleagues for consultation.
 
 The following diagram shows the interaction between 3 contracts, `Entry`,
-`First` and `Second` which shows one contract *catching* a revert that occurred
-in another contract and continued processing. All without you stepping through
-the debugger.
-
+`First` and `Second` which shows one contract _catching_ a revert initiated
+by another contract and continued processing.
 
 <details><summary>Click to view transaction overview</summary>
 
@@ -60,16 +54,17 @@ the debugger.
 
 </details>
 
-### Social coding review & collaboration
+### Collaboration
 
-Plantuml sequence diagrams can be annotated for note taking or to give feedback.
-The following diagram has an annotation to show how this feature can be
-utilized. This can be useful in an educational or social coding setting.
+Include and Leverage your teams' full expertise by reducing the requirement to
+participate (less reliance on solidity knowledge). Diagrams are efficient at
+presenting information to audiences of diverse specialties. Domain experts can
+efficiently engage with programmers and contribute the development lifecycle. 
 
 In the example below, the reviewer notes that `ETH-less (msg.value == 0)
 transactions should not revert` and makes a suggestion to add a test case to
-cover this scenario. The reviewer only needs to know the problem domain and not
-necessarily how to code or run solidity.
+cover this scenario, which may be a business logic that didn't make it into the
+coding requirements. 
 
 <details><summary>Click to view annotated diagram</summary>
 
@@ -77,25 +72,34 @@ necessarily how to code or run solidity.
 
 </details>
 
-            1. Inclusive review of dapp behavior with stake holders who are not
-               solidity developers. [Show example of a scenario that non devs
-               can discuss]
-  - [ ] [Motivation](Motivation)
-    - [ ] Communication: what does the debugger have to offer? debugger is an
-          instrumented view of a transaction with useful data for communication
-      - [ ] validating dev intent and code
-      - [ ] auditibility
-      - [ ] inclusive collaboration
-      - [ ] Francis' points
-    - [ ] Future vision
-      - [ ] Use tooling to generate and categorize tests
-      - [ ] Example of setting it up with task spooler and ganache
-  - [ ] Examples
-    - [ ] Local tests
-    - [ ] Hackathon
-    - [ ] Gloom
-    - [ ] ENS
-    - [ ] Balancer
+### Documentation & Onboarding
+
+Sit tenetur cupiditate deserunt natus consequuntur quidem Quibusdam officiis dolorem ratione alias expedita? Necessitatibus necessitatibus modi amet quibusdam voluptatem. Praesentium sit reiciendis minus ut eum Deleniti perspiciatis obcaecati laborum facere
+
+
+### Auditing preparation
+
+Ipsum sint expedita consequatur quidem deserunt? Consequuntur quibusdam maxime ex reprehenderit neque
+
+
+
+### notes
+- [ ] [Motivation](Motivation)
+  - [ ] Communication: what does the debugger have to offer? debugger is an
+        instrumented view of a transaction with useful data for communication
+    - [ ] validating dev intent and code
+    - [ ] auditibility
+    - [ ] inclusive collaboration
+    - [ ] Francis' points
+  - [ ] Future vision
+    - [ ] Use tooling to generate and categorize tests
+    - [ ] Example of setting it up with task spooler and ganache
+- [ ] Examples
+  - [ ] Local tests
+  - [ ] Hackathon
+  - [ ] Gloom
+  - [ ] ENS
+  - [ ] Balancer
 
 ## Todo
 
