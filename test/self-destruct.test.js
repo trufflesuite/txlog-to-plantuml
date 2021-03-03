@@ -4,7 +4,6 @@ jest.mock("../src/debugger");
 const {
   CallRelation: PCall,
   ReturnRelation: PReturn,
-  RevertRelation: PRevert,
   SelfDestructRelation: PSelfdestruct
 } = require("../src/node/plant");
 
@@ -34,6 +33,8 @@ describe("Self Destruct", () => {
     ).toBe(true);
 
     const [call1, call2, _ , destruct_ ] = umlCommands;
+    // ignore 3rd command
+    const [call1, call2, , destruct_] = umlCommands;
 
     expect(call1.value.toString()).toBe("0");  // no eth value
     expect(call1.message).toBe("constructor");  
